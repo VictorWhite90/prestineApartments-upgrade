@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import WhatsAppButton from './components/WhatsAppButton'
@@ -9,6 +9,9 @@ import Confirmation from './pages/Confirmation'
 import BookingError from './pages/BookingError'
 import Policies from './pages/Policies'
 import Contact from './pages/Contact'
+import Admin from './pages/Admin'
+import Login from './components/auth/Login'
+import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute'
 
 function App() {
   return (
@@ -27,6 +30,17 @@ function App() {
             <Route path="/gallery" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl">Gallery</h1></div>} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/policies" element={<Policies />} />
+            
+            {/* Admin routes */}
+            <Route path="/admin/login" element={<Login />} />
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedAdminRoute>
+                  <Admin />
+                </ProtectedAdminRoute>
+              } 
+            />
           </Routes>
         </main>
         <Footer />

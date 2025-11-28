@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Bookings collection
+    match /bookings/{bookingId} {
+      // Users can read their own bookings, admins can read all
+      allow read: if isAuthenticated() && 
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Anyone can create bookings (guest bookings allowed)
+      // Status must always be "pending_payment"
+      // Guest users (not authenticated) can only create bookings with userId = null
+      // Authenticated users can create bookings with userId = null or their own userId
+      allow create: if resource.data.status == "pending_payment" &&
+                       ((!isAuthenticated() && resource.data.userId == null) ||
+                        (isAuthenticated() && (resource.data.userId == null || resource.data.userId == request.auth.uid)));
+      
+      // Only admins can update booking status
+      // Admins can only update specific allowed fields
+      allow update: if isAdmin() && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status', 'updatedAt', 'paymentDate', 'cancellationDate', 'checkin_date', 'checkout_date', 'extendedAt', 'reason']);
+      
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+    
+    // Users collection (basic profile info)
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Admin-only collections
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

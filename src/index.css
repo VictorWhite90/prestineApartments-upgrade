@@ -135,3 +135,59 @@ body {
 .glass {
   @apply bg-white/10 backdrop-blur-md border border-white/20;
 }
+
+/* React DatePicker Custom Styles - Airline Booking Style */
+.react-datepicker {
+  @apply border border-gray-300 rounded-lg shadow-lg;
+  font-family: 'Inter', sans-serif;
+}
+
+.react-datepicker__header {
+  @apply bg-orange-600 text-white rounded-t-lg;
+}
+
+.react-datepicker__current-month {
+  @apply text-white font-semibold;
+}
+
+.react-datepicker__day-name {
+  @apply text-white font-medium;
+}
+
+.react-datepicker__day--disabled {
+  @apply text-gray-400 cursor-not-allowed;
+  background-color: #f3f4f6 !important;
+  opacity: 0.6 !important;
+}
+
+.react-datepicker__day--excluded {
+  @apply text-gray-400 cursor-not-allowed;
+  background-color: #f3f4f6 !important;
+  opacity: 0.6 !important;
+}
+
+.react-datepicker__day--keyboard-selected.react-datepicker__day--disabled {
+  background-color: #f3f4f6 !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-range,
+.react-datepicker__day--in-selecting-range {
+  @apply bg-orange-600 text-white;
+}
+
+.react-datepicker__day--in-selecting-range:not(.react-datepicker__day--in-range) {
+  @apply bg-orange-200 text-orange-900;
+}
+
+.react-datepicker__day:hover:not(.react-datepicker__day--disabled):not(.react-datepicker__day--selected) {
+  @apply bg-orange-100 text-orange-900;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply border-white;
+}
+
+.react-datepicker__navigation:hover *::before {
+  @apply border-white;
+}
