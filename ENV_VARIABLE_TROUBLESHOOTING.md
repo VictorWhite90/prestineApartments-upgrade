@@ -187,3 +187,4 @@ After environment variables are working:
 - Booking form should work
 - Admin panel should connect to Firestore
 
+

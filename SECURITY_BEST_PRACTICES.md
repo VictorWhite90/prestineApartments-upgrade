@@ -226,3 +226,4 @@ Use Vercel Environment Variables
 
 Your setup is secure! The combination of environment variables + Firestore Rules provides proper protection. 🎉
 
+

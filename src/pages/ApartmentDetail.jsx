@@ -95,7 +95,7 @@ export default function ApartmentDetail() {
       {/* Apartment Name Section */}
       <section className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-serif text-gray-900">{apartment.name}</h1>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-serif text-gray-900">{apartment.name}</h1>
         </div>
       </section>
 
@@ -105,7 +105,7 @@ export default function ApartmentDetail() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl md:text-4xl font-bold text-orange-600">
+                <p className="text-2xl md:text-3xl font-bold text-orange-600">
                   ₦{apartment.price.toLocaleString()}/night
                 </p>
                 <span className="text-xs text-gray-600 leading-none">excluding VAT/service charge</span>
@@ -139,9 +139,6 @@ export default function ApartmentDetail() {
                   <CardTitle className="text-orange-600">About This Apartment</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed mb-4">
-                    {apartment.description}
-                  </p>
                   <p className="text-gray-700 leading-relaxed">
                     {apartment.fullDescription}
                   </p>

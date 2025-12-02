@@ -19,17 +19,21 @@ service cloud.firestore {
     
     // Bookings collection
     match /bookings/{bookingId} {
-      // Users can read their own bookings, admins can read all
-      allow read: if isAuthenticated() && 
-                     (resource.data.userId == request.auth.uid || isAdmin());
+      // Allow reading for:
+      // 1. Anyone can read confirmed bookings (for date availability checks)
+      // 2. Users can read their own bookings  
+      // 3. Admins can read all bookings
+      allow read: if resource.data.status == "booking_successful" || // Anyone can read confirmed bookings for availability
+                     (isAuthenticated() && 
+                      (resource.data.userId == request.auth.uid || isAdmin()));
       
       // Anyone can create bookings (guest bookings allowed)
       // Status must always be "pending_payment"
-      // Guest users (not authenticated) can only create bookings with userId = null
-      // Authenticated users can create bookings with userId = null or their own userId
-      allow create: if resource.data.status == "pending_payment" &&
-                       ((!isAuthenticated() && resource.data.userId == null) ||
-                        (isAuthenticated() && (resource.data.userId == null || resource.data.userId == request.auth.uid)));
+      // Guest users: userId must be null
+      // Authenticated users: userId can be null or their own uid
+      allow create: if request.resource.data.status == "pending_payment" &&
+                       ((!isAuthenticated() && request.resource.data.userId == null) ||
+                        (isAuthenticated() && (request.resource.data.userId == null || request.resource.data.userId == request.auth.uid)));
       
       // Only admins can update booking status
       // Admins can only update specific allowed fields

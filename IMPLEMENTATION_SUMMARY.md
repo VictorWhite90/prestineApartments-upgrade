@@ -176,3 +176,4 @@ For issues:
 - [ ] Try accessing admin as non-admin user (should deny)
 - [ ] Test Firestore security rules in Rules Playground
 
+

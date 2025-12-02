@@ -86,3 +86,4 @@ After creating `.env.local`:
 - `SECURITY_BEST_PRACTICES.md` - Why Firebase keys are safe to be public
 - `VERCEL_DEPLOYMENT_GUIDE.md` - Production deployment guide
 
+

@@ -426,16 +426,30 @@ export default function Home() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex items-center justify-center p-6 cursor-pointer"
+                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-between p-6 cursor-pointer"
                         onClick={() => handleApartmentClick(index)}
                       >
-                        <div className="text-center">
+                        {/* Apartment Name at Top */}
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ delay: 0.1, duration: 0.3 }}
+                          className="text-left"
+                        >
+                          <h3 className="text-white text-sm md:text-base lg:text-lg font-bold">
+                            {apartment.name}
+                          </h3>
+                        </motion.div>
+
+                        {/* Check Apartment Details at Center */}
+                        <div className="text-center flex-1 flex flex-col items-center justify-center">
                           <motion.p
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
                             transition={{ delay: 0.2, duration: 0.3 }}
-                            className="text-white text-xl md:text-2xl lg:text-3xl font-bold mb-2"
+                            className="text-white text-base md:text-lg lg:text-xl font-bold mb-2"
                           >
                             Check Apartment Details
                           </motion.p>
@@ -444,7 +458,7 @@ export default function Home() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ delay: 0.3, duration: 0.3 }}
-                            className="text-white/90 text-sm md:text-base"
+                            className="text-white/90 text-xs md:text-sm"
                           >
                             {isMobile ? 'Tap to view details' : 'Click to view details'}
                           </motion.p>

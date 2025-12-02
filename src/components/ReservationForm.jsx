@@ -33,9 +33,16 @@ export default function ReservationForm({ apartment, price }) {
     emailjs.init(emailjsConfig.publicKey)
   }, [])
 
-  // Fetch blocked dates when apartment changes
+  // Fetch blocked dates when apartment changes (skip if date blocking is disabled)
   useEffect(() => {
     const fetchBlockedDates = async () => {
+      // Skip date blocking for apartments that have disableDateBlocking flag
+      if (apartment?.disableDateBlocking) {
+        setBlockedDates([])
+        setLoadingDates(false)
+        return
+      }
+      
       if (apartment?.id) {
         setLoadingDates(true)
         try {
@@ -50,7 +57,7 @@ export default function ReservationForm({ apartment, price }) {
       }
     }
     fetchBlockedDates()
-  }, [apartment?.id])
+  }, [apartment?.id, apartment?.disableDateBlocking])
 
   useEffect(() => {
     if (checkinDate && checkoutDate) {
@@ -96,25 +103,28 @@ export default function ReservationForm({ apartment, price }) {
 
     try {
       // Double-check date availability (dates are already blocked in calendar, but this is a safety check)
-      try {
-        const checkinStr = checkin instanceof Date ? checkin.toISOString().split('T')[0] : checkin
-        const checkoutStr = checkout instanceof Date ? checkout.toISOString().split('T')[0] : checkout
-        const isAvailable = await checkDateAvailability(
-          apartment.id,
-          checkinStr,
-          checkoutStr
-        )
-        
-        if (!isAvailable) {
-          setDateError('❌ These dates are not available. This apartment is already booked for the selected dates. Please choose different dates.')
+      // Skip this check for apartments with date blocking disabled
+      if (!apartment?.disableDateBlocking) {
+        try {
+          const checkinStr = checkin instanceof Date ? checkin.toISOString().split('T')[0] : checkin
+          const checkoutStr = checkout instanceof Date ? checkout.toISOString().split('T')[0] : checkout
+          const isAvailable = await checkDateAvailability(
+            apartment.id,
+            checkinStr,
+            checkoutStr
+          )
+          
+          if (!isAvailable) {
+            setDateError('❌ These dates are not available. This apartment is already booked for the selected dates. Please choose different dates.')
+            setIsSubmitting(false)
+            return // Block the booking
+          }
+        } catch (availabilityError) {
+          console.error('Date availability check failed:', availabilityError)
+          setDateError('Unable to verify date availability. Please try again or contact us.')
           setIsSubmitting(false)
-          return // Block the booking
+          return // Block booking if we can't verify dates
         }
-      } catch (availabilityError) {
-        console.error('Date availability check failed:', availabilityError)
-        setDateError('Unable to verify date availability. Please try again or contact us.')
-        setIsSubmitting(false)
-        return // Block booking if we can't verify dates
       }
 
       // Prepare booking data for Firestore (only if dates are available)
@@ -405,7 +415,7 @@ export default function ReservationForm({ apartment, price }) {
               </div>
             )}
             
-            {blockedDates.length > 0 && (
+            {!apartment?.disableDateBlocking && blockedDates.length > 0 && (
               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
                 <p>ℹ️ Unavailable dates are automatically grayed out in the calendar</p>
               </div>

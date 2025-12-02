@@ -253,3 +253,4 @@ If you encounter issues:
 - `DEPLOY_FIRESTORE_RULES.md` - How to deploy security rules
 - `SETUP_CHECKLIST.md` - Initial setup steps
 
+

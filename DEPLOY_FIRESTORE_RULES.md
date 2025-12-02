@@ -60,3 +60,4 @@ After deploying, try booking an apartment again. You should see:
 - ✅ Booking saved successfully
 - ✅ Redirect to confirmation page
 
+

@@ -54,3 +54,4 @@ VITE_EMAILJS_TEMPLATE_ID_PAYMENT_CONFIRMATION
 
 Follow `VERCEL_DEPLOYMENT_GUIDE.md` for step-by-step instructions.
 
+
