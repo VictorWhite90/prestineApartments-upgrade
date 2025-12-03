@@ -23,6 +23,7 @@ export default function Navbar() {
     { path: '/reviews', label: 'Reviews' },
     { path: '/gallery', label: 'Gallery' },
     { path: '/contact', label: 'Contact' },
+    { path: '/admin/login', label: 'Admin' },
   ]
 
   return (
@@ -60,12 +61,11 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="hidden md:block">
-                <div className="font-bold text-xl text-gray-900 group-hover:text-orange-600 transition-colors font-serif">
-                  Prestine Apartments
-                </div>
-                <div className="text-xs text-gray-500">Luxury Living Redefined</div>
-              </div>
+              <img 
+                src="/images/prestine ;ogo.png" 
+                alt="Prestine Apartments" 
+                className="h-10 md:h-12 w-auto max-w-[120px] md:max-w-[150px] object-contain"
+              />
             </Link>
 
             {/* Desktop Navigation */}
@@ -130,9 +130,11 @@ export default function Navbar() {
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-6 border-b-2 border-orange-600 bg-orange-600">
-                  <div className="font-bold text-lg text-white font-serif">
-                    Prestine Apartments
-                  </div>
+                  <img 
+                    src="/images/prestine ;ogo.png" 
+                    alt="Prestine Apartments" 
+                    className="h-10 w-auto object-contain"
+                  />
                   <button
                     onClick={() => setIsOpen(false)}
                     className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors"

@@ -36,10 +36,11 @@ export default function Footer() {
             transition={{ duration: 0.6 }}
           >
             <Link to="/" className="flex items-center gap-3 mb-6">
-              <div>
-                <div className="font-bold text-white text-lg font-serif">Prestine Apartments</div>
-                <div className="text-xs text-gray-400">Luxury Living Redefined</div>
-              </div>
+              <img 
+                src="/images/prestine ;ogo.png" 
+                alt="Prestine Apartments" 
+                className="h-12 w-auto object-contain"
+              />
             </Link>
             <p className="text-sm leading-relaxed mb-6 text-gray-400">
               Experience unparalleled comfort and elegance in the heart of Abuja. 

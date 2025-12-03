@@ -149,7 +149,7 @@ export default function Admin() {
       // Update status in Firestore
       await updateBookingStatus(bookingId, newStatus)
       
-      // If status changed to booking_successful, send confirmation email
+      // If status changed to booking_successful, send confirmation email via EmailJS
       if (newStatus === 'booking_successful' && booking) {
         try {
           // Format dates
@@ -160,6 +160,16 @@ export default function Admin() {
             booking.checkout_date.toDate().toISOString().split('T')[0] : 
             booking.checkout_date
 
+          // Format payment date (use current date/time since payment is being confirmed now)
+          const paymentDate = new Date()
+          const formattedPaymentDate = paymentDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+
           // Prepare email template parameters
           const templateParams = {
             user_title: booking.user_title || '',
@@ -169,6 +179,7 @@ export default function Admin() {
             user_phone: booking.user_phone || '',
             checkin_date: checkinDate,
             checkout_date: checkoutDate,
+            payment_date: formattedPaymentDate,
             guest_number: booking.guest_number || '',
             apartment_name: booking.apartment_name || '',
             room_rate: `₦${formatNumberWithCommas(booking.room_rate || booking.price_per_night || 0)}`,
@@ -181,14 +192,8 @@ export default function Admin() {
             booking_status: 'Booking Confirmed - Payment Received',
           }
 
-          // Send confirmation email to client
-          await emailjs.send(
-            emailjsConfig.serviceId,
-            emailjsConfig.templateIdClient,
-            templateParams
-          )
-
-          // Send notification to company
+          // Send payment confirmation email to client using templateIdCompany
+          // This is the template that tells the client their booking has been confirmed
           await emailjs.send(
             emailjsConfig.serviceId,
             emailjsConfig.templateIdCompany,
@@ -674,6 +679,7 @@ export default function Admin() {
                           <th className="py-3">Apartment</th>
                           <th className="py-3">Check-In</th>
                           <th className="py-3">Check-Out</th>
+                          <th className="py-3">Booking Date</th>
                           <th className="py-3">Status</th>
                           <th className="py-3">Actions</th>
                         </tr>
@@ -701,6 +707,10 @@ export default function Admin() {
                             </td>
                             <td className="py-4 text-gray-700">{formatDate(booking.checkin_date)}</td>
                             <td className="py-4 text-gray-700">{formatDate(booking.checkout_date)}</td>
+                            <td className="py-4 text-gray-700">
+                              <p className="text-sm">{formatDate(booking.createdAt)}</p>
+                              <p className="text-xs text-gray-400">{formatDateTime(booking.createdAt)}</p>
+                            </td>
                             <td className="py-4">
                               <span className={`px-3 py-1 text-xs rounded-full font-semibold ${statusBadgeStyle[booking.status] || 'bg-gray-100 text-gray-700'}`}>
                                 {statusLabels[booking.status] || booking.status}

@@ -38,7 +38,7 @@ export const apartments = [
     name: 'Premium Royale 1-Bedroom Apartment - Apo',
     slug: 'premium-royale-1-bedroom-apartment-apo',
     location: 'Apo',
-    price: 85000,
+    price: 99000,
     rating: 4.9,
     reviewCount: 128,
     image: '/images/prestineAprtLivingRoom.jpg',

@@ -5,7 +5,6 @@ export const emailjsConfig = {
   serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_p6y1fke',
   templateIdClient: import.meta.env.VITE_EMAILJS_TEMPLATE_ID_CLIENT || 'template_vvm744y',
   templateIdCompany: import.meta.env.VITE_EMAILJS_TEMPLATE_ID_COMPANY || 'template_iyygb2u',
-  templateIdPaymentConfirmation: import.meta.env.VITE_EMAILJS_TEMPLATE_ID_PAYMENT_CONFIRMATION || 'template_vvm744y', // Update with actual template ID
   publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '2ZNOdi6QPItTHItBO',
 };
 
