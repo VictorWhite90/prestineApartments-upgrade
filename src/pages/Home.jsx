@@ -421,8 +421,8 @@ export default function Home() {
 
                     {/* Promo Sales Banner */}
                     {apartment.originalPrice && (
-                      <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg transform -rotate-3 z-10">
-                        <span className="text-sm md:text-base font-bold uppercase tracking-wide">Promo Sales</span>
+                      <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 rounded shadow-lg transform -rotate-3 z-10">
+                        <span className="text-xs font-bold uppercase tracking-wide">Promo</span>
                       </div>
                     )}
                     

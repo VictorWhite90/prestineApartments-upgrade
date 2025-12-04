@@ -150,12 +150,12 @@ export default function Apartments() {
 
                     {/* Promo Sales Banner */}
                     {apartment.originalPrice && (
-                      <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg transform -rotate-3 z-20">
-                        <span className="text-sm md:text-base font-bold uppercase tracking-wide">Promo Sales</span>
+                      <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 rounded shadow-lg transform -rotate-3 z-20">
+                        <span className="text-xs font-bold uppercase tracking-wide">Promo</span>
                       </div>
                     )}
 
-                    <div className={`absolute ${apartment.originalPrice ? 'top-16' : 'top-4'} left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full`}>
+                    <div className={`absolute ${apartment.originalPrice ? 'top-12' : 'top-4'} left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full`}>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm font-bold text-gray-900">{apartment.rating || 4.9}</span>
