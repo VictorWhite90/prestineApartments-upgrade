@@ -444,9 +444,12 @@ export default function Home() {
                           transition={{ delay: 0.1, duration: 0.3 }}
                           className="text-center"
                         >
-                          <h3 className="text-white text-lg md:text-xl lg:text-2xl font-bold">
+                          <h3 className="text-white text-lg md:text-xl lg:text-2xl font-bold mb-2">
                             {apartment.name}
                           </h3>
+                          <p className="text-white/90 text-sm md:text-base">
+                            View Apartment Details
+                          </p>
                         </motion.div>
                       </motion.div>
                     )}
