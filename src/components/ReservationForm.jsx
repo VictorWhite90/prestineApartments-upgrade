@@ -16,7 +16,9 @@ import { apartments } from '@/data/apartments'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function ReservationForm({ apartment, price }) {
+export default function ReservationForm({ apartment, price: priceProp }) {
+  // Use the price passed as prop, or default to apartment.price (which is already the promo price if applicable)
+  const price = priceProp || apartment.price
   const { user } = useAuth() // Get current user if logged in
   const navigate = useNavigate()
   const [subtotal, setSubtotal] = useState(0)
@@ -180,22 +182,16 @@ export default function ReservationForm({ apartment, price }) {
         vat_amount: `₦${formatNumberWithCommas(vatAmount)}`,
         service_charge: `₦${formatNumberWithCommas(serviceCharge)}`,
         grand_total: `₦${formatNumberWithCommas(grandTotal)}`,
+        balance: `₦${formatNumberWithCommas(grandTotal)}`, // Initial balance equals grand total (no payment made yet)
         total_nights: totalNights,
       }
 
-      // Send emails via EmailJS
+      // Send reservation confirmation email via EmailJS
       try {
-        // Send to client
+        // Send reservation confirmation to client only (payment confirmation sent later by admin)
         await emailjs.send(
           emailjsConfig.serviceId,
           emailjsConfig.templateIdClient,
-          templateParams
-        )
-        
-        // Send to company
-        await emailjs.send(
-          emailjsConfig.serviceId,
-          emailjsConfig.templateIdCompany,
           templateParams
         )
       } catch (emailError) {
@@ -445,7 +441,7 @@ export default function ReservationForm({ apartment, price }) {
             {subtotal > 0 && (
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                 <div className="flex justify-between">
-                  <span>Subtotal (Excluding VAT):</span>
+                  <span>Subtotal (Excluding Taxes):</span>
                   <span className="font-bold">₦{formatNumberWithCommas(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600">

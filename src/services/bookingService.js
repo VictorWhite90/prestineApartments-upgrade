@@ -91,9 +91,10 @@ export const getBookingsByStatus = async (status) => {
  * Update booking status (only admins can do this)
  * @param {string} bookingId - Booking document ID
  * @param {string} newStatus - New status ('booking_successful' or 'cancelled')
+ * @param {Object} additionalData - Optional additional data (amount_paid, balance, etc.)
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const updateBookingStatus = async (bookingId, newStatus) => {
+export const updateBookingStatus = async (bookingId, newStatus, additionalData = {}) => {
   try {
     if (!['booking_successful', 'cancelled', 'reservation_failed'].includes(newStatus)) {
       throw new Error('Invalid status value')
@@ -102,12 +103,17 @@ export const updateBookingStatus = async (bookingId, newStatus) => {
     const bookingRef = doc(db, BOOKINGS_COLLECTION, bookingId)
     const updateData = {
       status: newStatus,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
+      ...additionalData
     }
 
     // If status is booking_successful, set payment date
     if (newStatus === 'booking_successful') {
-      updateData.paymentDate = Timestamp.now()
+      updateData.paymentDate = additionalData.paymentDate
+        ? (additionalData.paymentDate instanceof Date
+          ? Timestamp.fromDate(additionalData.paymentDate)
+          : Timestamp.now())
+        : Timestamp.now()
     }
 
     // If booking is cancelled, clear payment info so UI/analytics stay accurate
@@ -118,7 +124,7 @@ export const updateBookingStatus = async (bookingId, newStatus) => {
     }
 
     await updateDoc(bookingRef, updateData)
-    
+
     return {
       success: true
     }

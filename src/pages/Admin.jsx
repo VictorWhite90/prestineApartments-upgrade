@@ -40,6 +40,11 @@ export default function Admin() {
   const [extendDates, setExtendDates] = useState({ checkin: null, checkout: null })
   const [extendError, setExtendError] = useState('')
   const [extending, setExtending] = useState(false)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [paymentBooking, setPaymentBooking] = useState(null)
+  const [amountPaid, setAmountPaid] = useState('')
+  const [paymentError, setPaymentError] = useState('')
+  const [confirmingPayment, setConfirmingPayment] = useState(false)
   const processedAutoCancelRef = useRef(new Set())
   const applyLocalBookingUpdate = (bookingId, updates) => {
     setBookings((prev) =>
@@ -99,6 +104,21 @@ export default function Admin() {
   if (endDate) endDate.setHours(23, 59, 59, 999)
 
   const filteredBookings = bookings.filter((booking) => {
+    // Auto-hide cancelled bookings and past checkouts
+    if (booking.status === 'cancelled' || booking.status === 'reservation_failed') {
+      return false
+    }
+
+    // Auto-hide bookings past checkout date
+    const bookingCheckout = getDateValue(booking.checkout_date)
+    if (bookingCheckout) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (bookingCheckout < today) {
+        return false
+      }
+    }
+
     const fullName = `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
     const matchesSearch =
       !normalizedSearch ||
@@ -322,6 +342,127 @@ export default function Admin() {
         silent: true,
         statusMessage: 'Reservation not successful - payment was not received within 48 hours.',
       })
+    }
+  }
+
+  const openPaymentModal = (booking) => {
+    setPaymentBooking(booking)
+    setAmountPaid('')
+    setPaymentError('')
+    setPaymentModalOpen(true)
+  }
+
+  const closePaymentModal = () => {
+    setPaymentModalOpen(false)
+    setPaymentBooking(null)
+    setAmountPaid('')
+    setPaymentError('')
+    setConfirmingPayment(false)
+  }
+
+  const handleConfirmPayment = async () => {
+    if (!paymentBooking) return
+
+    const parsedAmount = parseFloat(amountPaid)
+    if (!amountPaid || isNaN(parsedAmount) || parsedAmount <= 0) {
+      setPaymentError('Please enter a valid payment amount.')
+      return
+    }
+
+    const grandTotal = paymentBooking.grand_total || 0
+    if (parsedAmount > grandTotal) {
+      setPaymentError('Amount paid cannot exceed the grand total.')
+      return
+    }
+
+    setConfirmingPayment(true)
+    setPaymentError('')
+
+    try {
+      const balance = grandTotal - parsedAmount
+
+      // Update booking with amount_paid and balance
+      const updateResult = await updateBookingStatus(paymentBooking.id, 'booking_successful', {
+        amount_paid: parsedAmount,
+        balance: balance,
+        paymentDate: new Date()
+      })
+
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Failed to update booking')
+      }
+
+      // Send confirmation email via EmailJS
+      const checkinDate = paymentBooking.checkin_date?.toDate ?
+        paymentBooking.checkin_date.toDate().toISOString().split('T')[0] :
+        paymentBooking.checkin_date
+      const checkoutDate = paymentBooking.checkout_date?.toDate ?
+        paymentBooking.checkout_date.toDate().toISOString().split('T')[0] :
+        paymentBooking.checkout_date
+
+      const paymentDate = new Date()
+      const formattedPaymentDate = paymentDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+
+      const templateParams = {
+        user_title: paymentBooking.user_title || '',
+        first_name: paymentBooking.first_name || '',
+        last_name: paymentBooking.last_name || '',
+        user_email: paymentBooking.user_email || '',
+        user_phone: paymentBooking.user_phone || '',
+        checkin_date: checkinDate,
+        checkout_date: checkoutDate,
+        payment_date: formattedPaymentDate,
+        guest_number: paymentBooking.guest_number || '',
+        apartment_name: paymentBooking.apartment_name || '',
+        room_rate: `₦${formatNumberWithCommas(paymentBooking.room_rate || paymentBooking.price_per_night || 0)}`,
+        price_per_night: `₦${formatNumberWithCommas(paymentBooking.price_per_night || paymentBooking.room_rate || 0)}/night`,
+        subtotal: `₦${formatNumberWithCommas(paymentBooking.subtotal || 0)}`,
+        vat_amount: `₦${formatNumberWithCommas(paymentBooking.vat_amount || 0)}`,
+        service_charge: `₦${formatNumberWithCommas(paymentBooking.service_charge || 0)}`,
+        grand_total: `₦${formatNumberWithCommas(grandTotal)}`,
+        amount_paid: `₦${formatNumberWithCommas(parsedAmount)}`,
+        balance: `₦${formatNumberWithCommas(balance)}`, // Balance remaining (0 if fully paid)
+        total_nights: paymentBooking.total_nights || 0,
+        booking_status: 'Booking Confirmed - Payment Received',
+      }
+
+      try {
+        await emailjs.send(
+          emailjsConfig.serviceId,
+          emailjsConfig.templateIdCompany,
+          templateParams
+        )
+      } catch (emailError) {
+        console.error('Email sending failed (booking still confirmed):', emailError)
+        // Continue even if email fails - booking is confirmed
+      }
+
+      // Update local state immediately for instant UI feedback
+      applyLocalBookingUpdate(paymentBooking.id, {
+        status: 'booking_successful',
+        amount_paid: parsedAmount,
+        balance: balance,
+        paymentDate: new Date(),
+        updatedAt: new Date()
+      })
+
+      // Refresh bookings from Firestore to ensure data consistency
+      await fetchBookings()
+
+      // Close modal and show success message
+      closePaymentModal()
+      alert('Payment confirmed! Confirmation email has been sent to the guest.')
+    } catch (error) {
+      console.error('Error confirming payment:', error)
+      setPaymentError('Failed to confirm payment. Please try again.')
+    } finally {
+      setConfirmingPayment(false)
     }
   }
 
@@ -556,13 +697,12 @@ export default function Admin() {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 gap-8 mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-2"
           >
             <Card className="border border-orange-200 shadow-lg">
               <CardHeader className="flex items-center justify-between">
@@ -612,10 +752,8 @@ export default function Admin() {
                         className="w-full mt-1 border border-orange-200 rounded-md py-2 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                       >
                         <option value="all">All statuses</option>
-                        <option value="pending_payment">Pending / Temporary</option>
-                        <option value="booking_successful">Booking Successful</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="reservation_failed">Reservation Not Successful</option>
+                        <option value="pending_payment">Pending Payment</option>
+                        <option value="booking_successful">Confirmed Bookings</option>
                       </select>
                     </div>
                     <div className="grid gap-3">
@@ -675,13 +813,15 @@ export default function Admin() {
                     <table className="w-full text-left text-sm">
                       <thead>
                         <tr className="text-gray-500 uppercase tracking-wide text-xs border-b">
-                          <th className="py-3">Guest</th>
-                          <th className="py-3">Apartment</th>
-                          <th className="py-3">Check-In</th>
-                          <th className="py-3">Check-Out</th>
-                          <th className="py-3">Booking Date</th>
-                          <th className="py-3">Status</th>
-                          <th className="py-3">Actions</th>
+                          <th className="py-3 w-[15%]">Guest</th>
+                          <th className="py-3 w-[12%]">Apartment</th>
+                          <th className="py-3 w-[8%]">Check-In</th>
+                          <th className="py-3 w-[8%]">Check-Out</th>
+                          <th className="py-3 w-[10%]">Booking Date</th>
+                          <th className="py-3 w-[12%]">Amount Paid</th>
+                          <th className="py-3 w-[12%]">Balance</th>
+                          <th className="py-3 w-[10%]">Status</th>
+                          <th className="py-3 w-[13%]">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -711,6 +851,22 @@ export default function Admin() {
                               <p className="text-sm">{formatDate(booking.createdAt)}</p>
                               <p className="text-xs text-gray-400">{formatDateTime(booking.createdAt)}</p>
                             </td>
+                            <td className="py-4 text-gray-700">
+                              {booking.status === 'booking_successful' && booking.amount_paid !== undefined && booking.amount_paid !== null ? (
+                                <span className="font-semibold text-green-700">₦{formatNumberWithCommas(booking.amount_paid)}</span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-4 text-gray-700">
+                              {booking.status === 'booking_successful' && (booking.balance !== undefined && booking.balance !== null) ? (
+                                <span className={`font-semibold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-700'}`}>
+                                  ₦{formatNumberWithCommas(booking.balance)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
                             <td className="py-4">
                               <span className={`px-3 py-1 text-xs rounded-full font-semibold ${statusBadgeStyle[booking.status] || 'bg-gray-100 text-gray-700'}`}>
                                 {statusLabels[booking.status] || booking.status}
@@ -721,10 +877,10 @@ export default function Admin() {
                                 <Button
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700 text-white w-full"
-                                  onClick={() => handleStatusChange(booking.id, 'booking_successful')}
+                                  onClick={() => openPaymentModal(booking)}
                                   disabled={updatingId === booking.id}
                                 >
-                                  {updatingId === booking.id ? 'Updating…' : 'Confirm Booking'}
+                                  {updatingId === booking.id ? 'Updating…' : 'Confirm Payment'}
                                 </Button>
                               )}
                               {booking.status === 'booking_successful' && (
@@ -767,64 +923,104 @@ export default function Admin() {
               </CardContent>
             </Card>
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="space-y-6"
-          >
-            <Card className="bg-slate-900 text-white border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl font-serif">Quick Actions</CardTitle>
-                <CardDescription className="text-gray-300">Manage site content in seconds</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Link to="/apartments">
-                  <Button className="w-full bg-white text-slate-900 hover:bg-gray-100">View Apartments</Button>
-                </Link>
-                <Link to="/policies">
-                  <Button variant="outline" className="w-full border-white text-white hover:bg-white/10">
-                    Update Policies
-                  </Button>
-                </Link>
-                <Link to="/contact">
-                  <Button variant="outline" className="w-full border-white text-white hover:bg-white/10">
-                    Contact Requests
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-orange-200 shadow-lg">
-              <CardHeader className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
-                  <ClipboardList className="h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl">System Notes</CardTitle>
-                  <CardDescription>Latest maintenance updates</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-gray-700">
-                <div>
-                  <p className="font-semibold text-gray-900">Firestore</p>
-                  <p>Bookings are now saved to Firestore database.</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Date Blocking</p>
-                  <p>Confirmed bookings automatically block dates.</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">EmailJS</p>
-                  <p>Reservation notifications are running normally.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </div>
+
+      {paymentModalOpen && paymentBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5">
+            <div>
+              <h3 className="text-2xl font-serif font-semibold text-gray-900">Confirm Payment</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Enter the amount paid by {paymentBooking.first_name} {paymentBooking.last_name}
+              </p>
+            </div>
+
+            <div className="bg-orange-50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Apartment:</span>
+                <span className="font-semibold text-gray-900">{paymentBooking.apartment_name}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Check-in:</span>
+                <span className="font-semibold text-gray-900">{formatDate(paymentBooking.checkin_date)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Check-out:</span>
+                <span className="font-semibold text-gray-900">{formatDate(paymentBooking.checkout_date)}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-orange-200">
+                <span className="text-gray-600">Grand Total:</span>
+                <span className="font-bold text-gray-900 text-lg">₦{formatNumberWithCommas(paymentBooking.grand_total || 0)}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">
+                Amount Paid by Client
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={paymentBooking.grand_total || 0}
+                  value={amountPaid}
+                  onChange={(e) => setAmountPaid(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-3 border-2 border-orange-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-semibold"
+                />
+              </div>
+            </div>
+
+            {amountPaid && !isNaN(parseFloat(amountPaid)) && parseFloat(amountPaid) > 0 && (
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Balance Remaining:</span>
+                  <span className={`font-bold text-xl ${(paymentBooking.grand_total - parseFloat(amountPaid)) > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                    ₦{formatNumberWithCommas(Math.max(0, (paymentBooking.grand_total || 0) - parseFloat(amountPaid)))}
+                  </span>
+                </div>
+                {(paymentBooking.grand_total - parseFloat(amountPaid)) > 0 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    This is a partial payment. The balance will be tracked in the system.
+                  </p>
+                )}
+                {(paymentBooking.grand_total - parseFloat(amountPaid)) === 0 && (
+                  <p className="text-xs text-green-600 mt-2 font-semibold">
+                    Full payment received!
+                  </p>
+                )}
+              </div>
+            )}
+
+            {paymentError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {paymentError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 md:flex-row md:justify-end">
+              <Button
+                variant="outline"
+                className="border-gray-300 text-gray-700"
+                onClick={closePaymentModal}
+                disabled={confirmingPayment}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleConfirmPayment}
+                disabled={confirmingPayment || !amountPaid}
+              >
+                {confirmingPayment ? 'Confirming...' : 'Confirm Payment & Send Email'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {extendModalOpen && extendBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

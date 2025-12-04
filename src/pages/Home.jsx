@@ -407,7 +407,7 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   className="relative"
                 >
-                  <div 
+                  <div
                     className="relative overflow-hidden rounded-lg shadow-lg group h-80 md:h-96 cursor-pointer"
                     onMouseEnter={() => !isMobile && setHoveredApartment(index)}
                     onMouseLeave={() => !isMobile && setHoveredApartment(null)}
@@ -418,51 +418,36 @@ export default function Home() {
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       loading="lazy"
                     />
+
+                    {/* Promo Sales Banner */}
+                    {apartment.originalPrice && (
+                      <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg transform -rotate-3 z-10">
+                        <span className="text-sm md:text-base font-bold uppercase tracking-wide">Promo Sales</span>
+                      </div>
+                    )}
                     
-                    {/* "Check Apartment Details" Text Overlay - Shows on both desktop and mobile when overlay is hidden */}
+                    {/* Apartment Name Centered Overlay - Shows when full overlay is hidden */}
                     {showCheckText && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-between p-6 cursor-pointer"
+                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex items-center justify-center p-6 cursor-pointer"
                         onClick={() => handleApartmentClick(index)}
                       >
-                        {/* Apartment Name at Top */}
+                        {/* Apartment Name at Center */}
                         <motion.div
-                          initial={{ opacity: 0, y: -10 }}
+                          initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
+                          exit={{ opacity: 0, y: 10 }}
                           transition={{ delay: 0.1, duration: 0.3 }}
-                          className="text-left"
+                          className="text-center"
                         >
-                          <h3 className="text-white text-sm md:text-base lg:text-lg font-bold">
+                          <h3 className="text-white text-lg md:text-xl lg:text-2xl font-bold">
                             {apartment.name}
                           </h3>
                         </motion.div>
-
-                        {/* Check Apartment Details at Center */}
-                        <div className="text-center flex-1 flex flex-col items-center justify-center">
-                          <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ delay: 0.2, duration: 0.3 }}
-                            className="text-white text-base md:text-lg lg:text-xl font-bold mb-2"
-                          >
-                            Check Apartment Details
-                          </motion.p>
-                          <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ delay: 0.3, duration: 0.3 }}
-                            className="text-white/90 text-xs md:text-sm"
-                          >
-                            {isMobile ? 'Tap to view details' : 'Click to view details'}
-                          </motion.p>
-                        </div>
                       </motion.div>
                     )}
                     
@@ -491,37 +476,27 @@ export default function Home() {
                             duration: 0.6, 
                             ease: "easeInOut" 
                           }}
-                          className="absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col justify-between p-6 md:p-8 text-white cursor-pointer"
+                          className="absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col justify-end p-6 md:p-8 text-white cursor-pointer"
                           onClick={() => handleApartmentClick(index)}
                         >
-                      <div className="flex-1 flex flex-col justify-center md:justify-start space-y-4">
-                        {/* Apartment Name */}
-                        <motion.h3 
+                      <div className="space-y-3 md:space-y-4">
+                        {/* Location */}
+                        <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2, duration: 0.5 }}
-                          className="text-lg md:text-xl font-bold leading-tight text-left"
-                        >
-                          {apartment.name}
-                        </motion.h3>
-                        
-                        {/* Location */}
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3, duration: 0.5 }}
                           className="flex items-center gap-2 text-sm md:text-base text-white/95 text-left"
                         >
                           <MapPin className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
                           <span className="font-medium">{apartment.location}</span>
                         </motion.div>
-                        
+
                         {/* Rating */}
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4, duration: 0.5 }}
-                          className="flex items-center gap-1.5 py-2 text-left"
+                          transition={{ delay: 0.3, duration: 0.5 }}
+                          className="flex items-center gap-1.5 text-left"
                         >
                           {[...Array(5)].map((_, i) => (
                             <Star key={i} className="h-4 w-4 md:h-5 md:w-5 fill-yellow-400 text-yellow-400" />
@@ -529,6 +504,16 @@ export default function Home() {
                           <span className="text-sm md:text-base font-semibold ml-1">{apartment.rating || 4.9}</span>
                           <span className="text-xs md:text-sm text-white/80">({apartment.reviewCount || 128} reviews)</span>
                         </motion.div>
+
+                        {/* Apartment Name */}
+                        <motion.h3
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4, duration: 0.5 }}
+                          className="text-lg md:text-xl font-bold leading-tight text-left"
+                        >
+                          {apartment.name}
+                        </motion.h3>
                       </div>
 
                       {/* Check Now Button - Bottom Left */}
@@ -536,7 +521,7 @@ export default function Home() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6, duration: 0.5 }}
-                        className="self-start mt-4"
+                        className="mt-4"
                       >
                         <Link to={`/apartments/${apartment.slug}`} onClick={(e) => e.stopPropagation()}>
                           <Button className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-5 md:px-8 md:py-6 text-sm md:text-base font-semibold shadow-lg hover:shadow-xl transition-all">

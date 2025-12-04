@@ -103,12 +103,42 @@ export default function ApartmentDetail() {
       <section className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl md:text-3xl font-bold text-orange-600">
-                  ₦{apartment.price.toLocaleString()}/night
-                </p>
-                <span className="text-xs text-gray-600 leading-none">excluding VAT/service charge</span>
+            <div className="flex flex-col gap-2">
+              {apartment.originalPrice && (
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-3 rounded-lg inline-block mb-2">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-base md:text-lg font-bold">PROMO: ₦{apartment.price.toLocaleString()}/night</span>
+                    </div>
+                    <span className="text-xs bg-white/20 px-2 py-1 rounded inline-block">Promo ends on 2 January</span>
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div className="flex items-baseline gap-2">
+                  {apartment.originalPrice ? (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-2xl md:text-3xl font-bold text-orange-600">
+                            ₦{apartment.price.toLocaleString()}/night
+                          </p>
+                          <p className="text-lg md:text-xl font-bold text-gray-400 line-through">
+                            ₦{apartment.originalPrice.toLocaleString()}/night
+                          </p>
+                        </div>
+                        <span className="text-xs text-gray-600 leading-none">excluding taxes</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl md:text-3xl font-bold text-orange-600">
+                        ₦{apartment.price.toLocaleString()}/night
+                      </p>
+                      <span className="text-xs text-gray-600 leading-none">excluding taxes</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             <Button 
@@ -140,7 +170,7 @@ export default function ApartmentDetail() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 leading-relaxed">
-                    {apartment.fullDescription}
+                    {apartment.description}
                   </p>
                 </CardContent>
               </Card>

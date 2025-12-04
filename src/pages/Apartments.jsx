@@ -147,7 +147,15 @@ export default function Apartments() {
                       className="w-full h-[400px] md:h-[500px] object-cover"
                       loading="lazy"
                     />
-                    <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full">
+
+                    {/* Promo Sales Banner */}
+                    {apartment.originalPrice && (
+                      <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg transform -rotate-3 z-20">
+                        <span className="text-sm md:text-base font-bold uppercase tracking-wide">Promo Sales</span>
+                      </div>
+                    )}
+
+                    <div className={`absolute ${apartment.originalPrice ? 'top-16' : 'top-4'} left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full`}>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm font-bold text-gray-900">{apartment.rating || 4.9}</span>
@@ -155,10 +163,21 @@ export default function Apartments() {
                     </div>
                     <div className="absolute top-4 right-4 bg-orange-600 text-white px-4 py-2 rounded-full">
                       <div className="flex flex-col items-end">
-                        <span className="text-sm font-bold">
-                          ₦{apartment.price.toLocaleString()}/night
-                        </span>
-                        <span className="text-[9px] text-white/80 leading-none">excluding VAT/tax</span>
+                        {apartment.originalPrice ? (
+                          <>
+                            <span className="text-xs line-through opacity-75">₦{apartment.originalPrice.toLocaleString()}/night</span>
+                            <span className="text-sm font-bold">₦{apartment.price.toLocaleString()}/night</span>
+                            <span className="text-[8px] text-white/90 leading-none">excluding taxes</span>
+                            <span className="text-[8px] text-white/90 leading-none">Promo ends 2 Jan</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm font-bold">
+                              ₦{apartment.price.toLocaleString()}/night
+                            </span>
+                            <span className="text-[9px] text-white/80 leading-none">excluding taxes</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -196,10 +215,6 @@ export default function Apartments() {
 
                     <p className="text-base md:text-lg text-gray-700 leading-relaxed break-words">
                       {apartment.description}
-                    </p>
-
-                    <p className="text-sm md:text-base text-gray-600 leading-relaxed break-words">
-                      {apartment.fullDescription}
                     </p>
 
                     {/* Features Grid */}
