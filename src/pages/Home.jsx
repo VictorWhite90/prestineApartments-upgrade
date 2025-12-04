@@ -422,7 +422,9 @@ export default function Home() {
                     {/* Promo Sales Banner */}
                     {apartment.originalPrice && (
                       <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 rounded shadow-lg transform -rotate-3 z-10">
-                        <span className="text-xs font-bold uppercase tracking-wide">Promo</span>
+                        <span className="text-xs font-bold uppercase tracking-wide">
+                          {Math.round(((apartment.originalPrice - apartment.price) / apartment.originalPrice) * 100)}% OFF
+                        </span>
                       </div>
                     )}
                     
