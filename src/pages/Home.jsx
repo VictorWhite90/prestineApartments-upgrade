@@ -185,27 +185,30 @@ export default function Home() {
   return (
     <div className="min-h-screen overflow-x-hidden max-w-full w-full">
       {/* Hero Section with Image Slider */}
-      <section 
-        className="relative h-[60vh] md:h-screen flex items-center justify-center overflow-hidden"
+      <section
+        className="relative h-[60vh] md:h-screen flex items-center justify-center overflow-hidden rounded-tl-[80px]"
         onMouseEnter={() => setShowArrows(true)}
         onMouseLeave={() => setShowArrows(false)}
       >
+        {/* Animated gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-blue-800/20 animate-gradient-shift bg-200% z-[1] pointer-events-none"></div>
+
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute inset-0"
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 rounded-tl-[80px]"
           >
             <img
               src={heroImages[currentSlide].image}
               alt={`Slide ${currentSlide + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-tl-[80px]"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
           </motion.div>
         </AnimatePresence>
 
@@ -219,20 +222,26 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className={`absolute inset-0 flex ${getTextPosition(heroImages[currentSlide].text.position)}`}
           >
-            <div className="text-white z-10 max-w-4xl px-4">
-              <motion.h1 
+            <div className="text-white z-10 max-w-4xl px-4 pb-16 md:pb-24">
+              <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-light mb-2 tracking-tight"
+                transition={{ delay: 0.4, type: "spring", stiffness: 50 }}
+                className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-light mb-2 tracking-tight drop-shadow-2xl"
+                style={{
+                  textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 8px 40px rgba(37,99,235,0.3)'
+                }}
               >
                 {heroImages[currentSlide].text.main}
               </motion.h1>
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-light mb-4 tracking-tight"
+                transition={{ delay: 0.5, type: "spring", stiffness: 50 }}
+                className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-light mb-4 tracking-tight drop-shadow-2xl"
+                style={{
+                  textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 8px 40px rgba(37,99,235,0.3)'
+                }}
               >
                 {heroImages[currentSlide].text.sub}
               </motion.h2>
@@ -240,10 +249,22 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="text-xs sm:text-sm md:text-base text-white/90 font-light max-w-xl mt-4 md:mt-6"
+                className="text-xs sm:text-sm md:text-base text-white/90 font-light max-w-xl mt-4 md:mt-6 drop-shadow-lg mb-8 md:mb-10"
               >
                 {heroImages[currentSlide].text.tagline}
               </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+              >
+                <Link to="/apartments">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 animate-pulse-glow">
+                    Explore Apartments
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </motion.div>
             </div>
           </motion.div>
         </AnimatePresence>
@@ -332,7 +353,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4">
                 <Link to="/apartments" className="w-full sm:w-auto">
-                  <Button className="bg-orange-600 hover:bg-orange-700 text-white px-6 md:px-8 w-full sm:w-auto">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 md:px-8 w-full sm:w-auto">
                     Explore Apartments
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -375,10 +396,17 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-8 md:mb-12 lg:mb-16"
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light text-gray-900 mb-3 md:mb-4">
-              Featured Apartments
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light text-gray-900 mb-3 md:mb-4 relative inline-block">
+              <span className="relative z-10">Featured Apartments</span>
+              <motion.div
+                initial={{ width: 0 }}
+                whileInView={{ width: "100%" }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 rounded-full"
+              />
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4 animate-fade-in">
               Explore our premium collection of carefully curated apartments
             </p>
           </motion.div>
@@ -388,13 +416,13 @@ export default function Home() {
               const isHovered = hoveredApartment === index
               const isClicked = clickedApartment === index
               const isMobileOverlayShown = mobileShowOverlay === index
-              
+
               // Desktop: show on hover or click | Mobile: show only on click
               // Only show overlay if this is the active one
-              const showOverlay = isMobile 
+              const showOverlay = isMobile
                 ? isMobileOverlayShown
                 : (isHovered || isClicked)
-              
+
               // Show "Check Apartment Details" text when overlay is not shown
               const showCheckText = !showOverlay
 
@@ -404,11 +432,15 @@ export default function Home() {
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="relative"
+                  transition={{ duration: 0.6, delay: index * 0.1, type: "spring", stiffness: 100 }}
+                  className="relative group"
+                  whileHover={{ y: -12, transition: { duration: 0.3 } }}
                 >
+                  {/* Animated glow effect on hover */}
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-blue-400 rounded-tl-[80px] opacity-0 group-hover:opacity-75 blur transition duration-500 group-hover:duration-200"></div>
+
                   <div
-                    className="relative overflow-hidden rounded-lg shadow-lg group h-80 md:h-96 cursor-pointer"
+                    className="relative overflow-hidden rounded-tl-[80px] shadow-lg group h-96 md:h-[500px] cursor-pointer bg-white"
                     onMouseEnter={() => !isMobile && setHoveredApartment(index)}
                     onMouseLeave={() => !isMobile && setHoveredApartment(null)}
                   >
@@ -419,15 +451,15 @@ export default function Home() {
                       loading="lazy"
                     />
 
-                    {/* Promo Sales Banner */}
+                    {/* Promo Sales Banner - Pure red */}
                     {apartment.originalPrice && (
-                      <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 rounded shadow-lg transform -rotate-3 z-10">
+                      <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-2xl transform z-20">
                         <span className="text-xs font-bold uppercase tracking-wide">
                           {Math.round(((apartment.originalPrice - apartment.price) / apartment.originalPrice) * 100)}% OFF
                         </span>
                       </div>
                     )}
-                    
+
                     {/* Apartment Name Centered Overlay - Shows when full overlay is hidden */}
                     {showCheckText && (
                       <motion.div
@@ -461,10 +493,10 @@ export default function Home() {
                       {showOverlay && (
                         <motion.div
                           key={`overlay-${index}`}
-                          initial={{ 
-                            opacity: 0, 
-                            clipPath: index === 0 || index === 2 
-                              ? 'ellipse(0% 100% at 0% 50%)' 
+                          initial={{
+                            opacity: 0,
+                            clipPath: index === 0 || index === 2
+                              ? 'ellipse(0% 100% at 0% 50%)'
                               : 'ellipse(0% 100% at 100% 50%)'
                           }}
                           animate={{
@@ -473,13 +505,13 @@ export default function Home() {
                           }}
                           exit={{
                             opacity: 0,
-                            clipPath: index === 0 || index === 2 
-                              ? 'ellipse(0% 100% at 0% 50%)' 
+                            clipPath: index === 0 || index === 2
+                              ? 'ellipse(0% 100% at 0% 50%)'
                               : 'ellipse(0% 100% at 100% 50%)'
                           }}
-                          transition={{ 
-                            duration: 0.6, 
-                            ease: "easeInOut" 
+                          transition={{
+                            duration: 0.6,
+                            ease: "easeInOut"
                           }}
                           className="absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col justify-end p-6 md:p-8 text-white cursor-pointer"
                           onClick={() => handleApartmentClick(index)}
@@ -529,7 +561,7 @@ export default function Home() {
                         className="mt-4"
                       >
                         <Link to={`/apartments/${apartment.slug}`} onClick={(e) => e.stopPropagation()}>
-                          <Button className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-5 md:px-8 md:py-6 text-sm md:text-base font-semibold shadow-lg hover:shadow-xl transition-all">
+                          <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-5 md:px-8 md:py-6 text-sm md:text-base font-semibold shadow-lg hover:shadow-xl transition-all">
                             Check Now
                             <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
                           </Button>
@@ -552,7 +584,7 @@ export default function Home() {
             className="text-center"
           >
             <Link to="/apartments">
-              <Button variant="outline" className="border-orange-600 text-orange-600 hover:bg-orange-50 px-12">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 text-base font-semibold shadow-xl hover:shadow-2xl transition-all">
                 View All Apartments
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -571,10 +603,19 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-8 md:mb-12 lg:mb-16"
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light text-gray-900 mb-3 md:mb-4">
-              Why Choose Prestine Apartments?
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-light text-gray-900 mb-3 md:mb-4 relative inline-block">
+              <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900">
+                Why Choose Prestine Apartments?
+              </span>
+              <motion.div
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, delay: 0.3 }}
+                className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-600 to-transparent origin-center"
+              />
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4 animate-fade-in">
               We combine luxury, comfort, and convenience to create an exceptional living experience
             </p>
           </motion.div>
@@ -586,18 +627,29 @@ export default function Home() {
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="group"
+                transition={{ duration: 0.6, delay: index * 0.1, type: "spring", stiffness: 100 }}
+                className="group relative"
+                whileHover={{ y: -8, transition: { duration: 0.2 } }}
               >
-                <Card className="h-full hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
-                  <CardHeader className="text-center">
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${index % 2 === 0 ? 'bg-orange-100' : 'bg-gray-900'} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                      <item.icon className={`h-8 w-8 ${index % 2 === 0 ? 'text-orange-600' : 'text-white'}`} />
-                    </div>
-                    <CardTitle className="text-xl">{item.title}</CardTitle>
+                {/* Glow effect on hover */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition duration-500"></div>
+
+                <Card className="relative h-full hover:shadow-2xl transition-all duration-500 border-0 shadow-lg bg-white overflow-hidden">
+                  {/* Animated background pattern */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+
+                  <CardHeader className="text-center relative z-10">
+                    <motion.div
+                      whileHover={{ rotate: 360 }}
+                      transition={{ duration: 0.6 }}
+                      className={`w-16 h-16 mx-auto mb-4 rounded-full ${index % 2 === 0 ? 'bg-blue-100' : 'bg-blue-600'} flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-lg`}
+                    >
+                      <item.icon className={`h-8 w-8 ${index % 2 === 0 ? 'text-blue-600' : 'text-white'}`} />
+                    </motion.div>
+                    <CardTitle className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">{item.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 text-center text-sm">{item.description}</p>
+                    <p className="text-gray-600 text-center text-sm leading-relaxed">{item.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>

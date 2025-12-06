@@ -48,7 +48,7 @@ export default function Apartments() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 overflow-x-hidden max-w-full w-full">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden max-w-full w-full">
       {/* Hero Section with Image Carousel */}
       <section className="relative h-[60vh] md:h-[70vh] overflow-hidden max-w-full w-full">
         <AnimatePresence mode="wait">
@@ -138,48 +138,53 @@ export default function Apartments() {
                         }
                       }
                     }}
-                    className={`relative overflow-hidden rounded-lg shadow-2xl max-w-[95%] md:max-w-[85%] mx-auto ${!isEven ? 'lg:col-start-2' : ''}`}
+                    className={`relative overflow-hidden rounded-tl-[80px] shadow-2xl max-w-[95%] md:max-w-[85%] mx-auto group ${!isEven ? 'lg:col-start-2' : ''}`}
                     style={{ marginTop: index === 0 ? '2rem' : '1rem' }}
+                    whileHover={{ scale: 1.02, y: -5 }}
                   >
-                    <img
-                      src={apartment.image}
-                      alt={apartment.name}
-                      className="w-full h-[400px] md:h-[500px] object-cover"
-                      loading="lazy"
-                    />
+                    <div className="relative h-full w-full overflow-hidden rounded-tl-[80px]">
+                      <img
+                        src={apartment.image}
+                        alt={apartment.name}
+                        className="w-full h-[400px] md:h-[500px] object-cover group-hover:scale-105 transition-transform duration-700"
+                        loading="lazy"
+                      />
 
-                    {/* Promo Sales Banner */}
-                    {apartment.originalPrice && (
-                      <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 rounded shadow-lg transform -rotate-3 z-20">
-                        <span className="text-xs font-bold uppercase tracking-wide">
-                          {Math.round(((apartment.originalPrice - apartment.price) / apartment.originalPrice) * 100)}% OFF
-                        </span>
-                      </div>
-                    )}
+                      {/* Promo Sales Banner - Pure red */}
+                      {apartment.originalPrice && (
+                        <motion.div
+                          initial={{ scale: 0, rotate: -12 }}
+                          animate={{ scale: 1, rotate: -3 }}
+                          transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                          className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-2xl transform z-20"
+                        >
+                          <span className="text-xs font-bold uppercase tracking-wide">
+                            {Math.round(((apartment.originalPrice - apartment.price) / apartment.originalPrice) * 100)}% OFF
+                          </span>
+                        </motion.div>
+                      )}
 
-                    <div className={`absolute ${apartment.originalPrice ? 'top-12' : 'top-4'} left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full`}>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-bold text-gray-900">{apartment.rating || 4.9}</span>
+                      <div className={`absolute ${apartment.originalPrice ? 'top-16' : 'top-4'} left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full`}>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm font-bold text-gray-900">{apartment.rating || 4.9}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="absolute top-4 right-4 bg-orange-600 text-white px-4 py-2 rounded-full">
-                      <div className="flex flex-col items-end">
-                        {apartment.originalPrice ? (
-                          <>
-                            <span className="text-xs line-through opacity-75">₦{apartment.originalPrice.toLocaleString()}/night</span>
-                            <span className="text-sm font-bold">₦{apartment.price.toLocaleString()}/night</span>
-                            <span className="text-[8px] text-white/90 leading-none">excluding taxes</span>
-                            <span className="text-[8px] text-white/90 leading-none">Promo ends 2 Jan</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-sm font-bold">
-                              ₦{apartment.price.toLocaleString()}/night
-                            </span>
-                            <span className="text-[9px] text-white/80 leading-none">excluding taxes</span>
-                          </>
-                        )}
+                      <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-2xl">
+                        <div className="flex flex-col items-end">
+                          {apartment.originalPrice ? (
+                            <>
+                              <span className="text-xs line-through opacity-75">₦{apartment.originalPrice.toLocaleString()}/night</span>
+                              <span className="text-sm font-bold drop-shadow-lg">₦{apartment.price.toLocaleString()}/night</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-sm font-bold drop-shadow-lg">
+                                ₦{apartment.price.toLocaleString()}/night
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -222,19 +227,19 @@ export default function Apartments() {
                     {/* Features Grid */}
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
                       <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <Users className="h-5 w-5 text-orange-600" />
+                        <Users className="h-5 w-5 text-blue-600" />
                         <span><strong>{apartment.details.maxGuests}</strong> Guests</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <Bed className="h-5 w-5 text-orange-600" />
+                        <Bed className="h-5 w-5 text-blue-600" />
                         <span>{apartment.details.bedSize}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <Bath className="h-5 w-5 text-orange-600" />
+                        <Bath className="h-5 w-5 text-blue-600" />
                         <span>{apartment.details.bathrooms}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <Wifi className="h-5 w-5 text-orange-600" />
+                        <Wifi className="h-5 w-5 text-blue-600" />
                         <span>Free WiFi</span>
                       </div>
                     </div>
@@ -245,17 +250,17 @@ export default function Apartments() {
                       <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {apartment.features.map((feature, idx) => (
                           <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                            <div className="w-2 h-2 rounded-full bg-orange-600"></div>
+                            <div className="w-2 h-2 rounded-full bg-blue-600"></div>
                             {feature}
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    {/* Action Button */}
+                    {/* Action Button - Solid blue with white text */}
                     <div className="pt-4">
                       <Link to={`/apartments/${apartment.slug}`}>
-                        <Button className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all">
                           View Details & Book Now
                           <ArrowRight className="ml-2 h-5 w-5" />
                         </Button>

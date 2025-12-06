@@ -95,7 +95,7 @@ export default function Navbar() {
 
             {/* Mobile Menu Button */}
             <button
-              className="lg:hidden relative p-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
+              className="lg:hidden relative p-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
@@ -129,10 +129,10 @@ export default function Navbar() {
               className="fixed top-0 right-0 bottom-0 w-80 bg-gradient-to-b from-white to-gray-50 z-50 lg:hidden shadow-2xl"
             >
               <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-6 border-b-2 border-orange-600 bg-orange-600">
-                  <img 
-                    src="/images/prestine ;ogo.png" 
-                    alt="Prestine Apartments" 
+                <div className="flex items-center justify-between p-6 border-b-2 border-blue-600 bg-blue-600">
+                  <img
+                    src="/images/prestine ;ogo.png"
+                    alt="Prestine Apartments"
                     className="h-10 w-auto object-contain"
                   />
                   <button
@@ -156,8 +156,8 @@ export default function Navbar() {
                           to={link.path}
                           className={`block px-4 py-3 rounded-lg transition-all duration-300 ${
                             location.pathname === link.path
-                              ? 'bg-orange-600 text-white font-semibold shadow-lg'
-                              : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
+                              ? 'bg-blue-600 text-white font-semibold shadow-lg'
+                              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                           }`}
                           onClick={() => setIsOpen(false)}
                         >
@@ -170,11 +170,11 @@ export default function Navbar() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
-                    className="mt-8 pt-8 border-t-2 border-orange-200"
+                    className="mt-8 pt-8 border-t-2 border-blue-200"
                   >
                     <Link
                       to="/apartments"
-                      className="block w-full px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white text-center rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                      className="block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105"
                       onClick={() => setIsOpen(false)}
                     >
                       Book Now
@@ -188,18 +188,18 @@ export default function Navbar() {
                   >
                     <a
                       href="tel:+2348029823593"
-                      className="flex items-center gap-3 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg text-gray-700 transition-colors border border-orange-200"
+                      className="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg text-gray-700 transition-colors border border-blue-200"
                       onClick={() => setIsOpen(false)}
                     >
-                      <Phone className="h-5 w-5 text-orange-600" />
+                      <Phone className="h-5 w-5 text-blue-600" />
                       <span className="font-medium">(+234) 0802 982 3593</span>
                     </a>
                     <a
                       href="mailto:Support@prestineapartment.com"
-                      className="flex items-center gap-3 px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg text-gray-700 transition-colors border border-orange-200"
+                      className="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg text-gray-700 transition-colors border border-blue-200"
                       onClick={() => setIsOpen(false)}
                     >
-                      <Mail className="h-5 w-5 text-orange-600" />
+                      <Mail className="h-5 w-5 text-blue-600" />
                       <span className="text-sm font-medium">Support@prestineapartment.com</span>
                     </a>
                   </motion.div>

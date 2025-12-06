@@ -4,7 +4,7 @@ import { apartments } from '@/data/apartments'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import ReservationForm from '@/components/ReservationForm'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -13,9 +13,42 @@ export default function ApartmentDetail() {
   const navigate = useNavigate()
   const apartment = apartments.find((apt) => apt.slug === slug)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  
+  const [starPosition, setStarPosition] = useState({ top: '15%', left: '15%' })
+  const [showStar, setShowStar] = useState(true)
+  const [currentPositionIndex, setCurrentPositionIndex] = useState(0)
+
   // Get other apartments (excluding current one)
   const otherApartments = apartments.filter((apt) => apt.id !== apartment?.id)
+
+  // Defined positions: top-left, bottom-right, bottom-left, top-center, bottom-center, top-right
+  // Positioned at edges to avoid "Book Now" text in center
+  const starPositions = [
+    { top: '10%', left: '8%' },       // top-left
+    { top: '70%', left: '88%' },      // bottom-right
+    { top: '70%', left: '8%' },       // bottom-left
+    { top: '10%', left: '48%' },      // top-center
+    { top: '70%', left: '48%' },      // bottom-center
+    { top: '10%', left: '88%' },      // top-right
+  ]
+
+  // Sparkling star effect at specific positions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Hide star (blink off)
+      setShowStar(false)
+
+      setTimeout(() => {
+        // Move to next position
+        setCurrentPositionIndex((prev) => (prev + 1) % starPositions.length)
+        setStarPosition(starPositions[(currentPositionIndex + 1) % starPositions.length])
+
+        // Show star (blink on)
+        setShowStar(true)
+      }, 300) // Brief delay before appearing at new position
+    }, 2500) // Change position every 2.5 seconds (stay visible longer)
+
+    return () => clearInterval(interval)
+  }, [currentPositionIndex])
 
   if (!apartment) {
     return (
@@ -74,22 +107,6 @@ export default function ApartmentDetail() {
           </>
         )}
 
-        {/* Thumbnail Navigation */}
-        {apartment.images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {apartment.images.map((img, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={`w-20 h-20 rounded overflow-hidden border-2 transition-all ${
-                  currentImageIndex === index ? 'border-white scale-110' : 'border-transparent opacity-70'
-                }`}
-              >
-                <img src={img} alt={`${apartment.name} ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
-              </button>
-            ))}
-          </div>
-        )}
       </section>
 
       {/* Apartment Name Section */}
@@ -105,12 +122,13 @@ export default function ApartmentDetail() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex flex-col gap-2">
               {apartment.originalPrice && (
-                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-3 rounded-lg inline-block mb-2">
-                  <div className="flex flex-col gap-1">
+                <div className="relative overflow-hidden bg-gray-500/20 text-gray-900 px-4 py-3 rounded-lg inline-block mb-2 group">
+                  <div className="absolute inset-0 bg-blue-600 -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-in-out"></div>
+                  <div className="relative z-10 flex flex-col gap-1 transition-colors duration-300">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-base md:text-lg font-bold">PROMO: ₦{apartment.price.toLocaleString()}/night</span>
+                      <span className="text-base md:text-lg font-bold group-hover:text-white transition-colors duration-300">PROMO: ₦{apartment.price.toLocaleString()}/night</span>
                     </div>
-                    <span className="text-xs bg-white/20 px-2 py-1 rounded inline-block">Promo ends on 2 January</span>
+                    <span className="text-xs bg-black/10 group-hover:bg-white/20 px-2 py-1 rounded inline-block group-hover:text-white transition-all duration-300">Promo ends on 2 January</span>
                   </div>
                 </div>
               )}
@@ -118,36 +136,46 @@ export default function ApartmentDetail() {
                 <div className="flex items-baseline gap-2">
                   {apartment.originalPrice ? (
                     <>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-2xl md:text-3xl font-bold text-orange-600">
-                            ₦{apartment.price.toLocaleString()}/night
-                          </p>
-                          <p className="text-lg md:text-xl font-bold text-gray-400 line-through">
-                            ₦{apartment.originalPrice.toLocaleString()}/night
-                          </p>
-                        </div>
-                        <span className="text-xs text-gray-600 leading-none">excluding taxes</span>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-2xl md:text-3xl font-bold text-blue-600">
+                          ₦{apartment.price.toLocaleString()}/night
+                        </p>
+                        <p className="text-lg md:text-xl font-bold text-gray-400 line-through">
+                          ₦{apartment.originalPrice.toLocaleString()}/night
+                        </p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <p className="text-2xl md:text-3xl font-bold text-orange-600">
+                      <p className="text-2xl md:text-3xl font-bold text-blue-600">
                         ₦{apartment.price.toLocaleString()}/night
                       </p>
-                      <span className="text-xs text-gray-600 leading-none">excluding taxes</span>
                     </>
                   )}
                 </div>
               </div>
             </div>
-            <Button 
+            <Button
               onClick={() => {
                 document.getElementById('reservation-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 text-base sm:px-8 sm:py-6 sm:text-lg"
+              className="relative overflow-hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 text-base sm:px-8 sm:py-6 sm:text-lg"
             >
               Book Now
+              {/* Sparkling Star */}
+              {showStar && (
+                <span
+                  className="absolute text-white text-lg pointer-events-none animate-pulse"
+                  style={{
+                    top: starPosition.top,
+                    left: starPosition.left,
+                    filter: 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6))',
+                    textShadow: '0 0 10px rgba(255, 255, 255, 1), 0 0 20px rgba(255, 255, 255, 0.8)'
+                  }}
+                >
+                  ✦
+                </span>
+              )}
             </Button>
           </div>
         </div>
@@ -165,8 +193,8 @@ export default function ApartmentDetail() {
               transition={{ duration: 0.6 }}
             >
               <Card>
-                <CardHeader className="bg-orange-50 border-b border-orange-200">
-                  <CardTitle className="text-orange-600">About This Apartment</CardTitle>
+                <CardHeader className="bg-gray-500/20 border-b border-gray-300">
+                  <CardTitle className="text-gray-900">About This Apartment</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 leading-relaxed">
@@ -183,14 +211,14 @@ export default function ApartmentDetail() {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <Card>
-                <CardHeader className="bg-orange-50 border-b border-orange-200">
-                  <CardTitle className="text-orange-600">Features</CardTitle>
+                <CardHeader className="bg-gray-500/20 border-b border-gray-300">
+                  <CardTitle className="text-gray-900">Features</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {apartment.features.map((feature, index) => (
                       <li key={index} className="flex items-center gap-2">
-                        <span className="text-orange-600">●</span>
+                        <span className="text-gray-700">●</span>
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -206,26 +234,26 @@ export default function ApartmentDetail() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <Card>
-                <CardHeader className="bg-orange-50 border-b border-orange-200">
-                  <CardTitle className="text-orange-600">Apartment Details</CardTitle>
+                <CardHeader className="bg-gray-500/20 border-b border-gray-300">
+                  <CardTitle className="text-gray-900">Apartment Details</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Electricity</p>
-                      <p className="font-bold text-orange-600">{apartment.details.electricity}</p>
+                      <p className="font-bold text-gray-900">{apartment.details.electricity}</p>
                     </div>
-                    <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Max Guests</p>
-                      <p className="font-bold text-orange-600">{apartment.details.maxGuests}</p>
+                      <p className="font-bold text-gray-900">{apartment.details.maxGuests}</p>
                     </div>
-                    <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Bed Size</p>
-                      <p className="font-bold text-orange-600">{apartment.details.bedSize}</p>
+                      <p className="font-bold text-gray-900">{apartment.details.bedSize}</p>
                     </div>
-                    <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Bathrooms</p>
-                      <p className="font-bold text-orange-600">{apartment.details.bathrooms}</p>
+                      <p className="font-bold text-gray-900">{apartment.details.bathrooms}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -298,17 +326,17 @@ export default function ApartmentDetail() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
-                <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer group"
+                <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer group rounded-tl-[80px]"
                   onClick={() => navigate(`/apartments/${apt.slug}`)}
                 >
-                  <div className="relative h-64 overflow-hidden">
+                  <div className="relative h-80 md:h-96 overflow-hidden rounded-tl-[80px]">
                     <img
                       src={apt.image}
                       alt={apt.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       loading="lazy"
                     />
-                    <div className="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                    <div className="absolute top-4 right-4 bg-blue-600 text-white px-2 py-1 rounded-lg text-xs font-bold">
                       ₦{apt.price.toLocaleString()}/night
                     </div>
                   </div>
@@ -334,7 +362,7 @@ export default function ApartmentDetail() {
                           e.stopPropagation()
                           navigate(`/apartments/${apt.slug}`)
                         }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         View Details
                       </Button>

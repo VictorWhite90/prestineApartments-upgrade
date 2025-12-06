@@ -83,9 +83,10 @@ export default function ReservationForm({ apartment, price: priceProp }) {
   }
 
   const calculateCharges = () => {
-    const vatAmount = subtotal * 0.075
-    const serviceCharge = subtotal * 0.1
-    const grandTotal = subtotal + vatAmount + serviceCharge
+    // Prices already include VAT and service charge
+    const vatAmount = 0
+    const serviceCharge = 0
+    const grandTotal = subtotal
     return { vatAmount, serviceCharge, grandTotal }
   }
 
@@ -440,22 +441,13 @@ export default function ReservationForm({ apartment, price: priceProp }) {
 
             {subtotal > 0 && (
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal (Excluding Taxes):</span>
-                  <span className="font-bold">₦{formatNumberWithCommas(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>VAT (7.5%):</span>
-                  <span>₦{formatNumberWithCommas(vatAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Service Charge (10%):</span>
-                  <span>₦{formatNumberWithCommas(serviceCharge)}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                  <span>Grand Total:</span>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total Amount:</span>
                   <span>₦{formatNumberWithCommas(grandTotal)}</span>
                 </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  * Price includes VAT (7.5%) and Service Charge (10%)
+                </p>
               </div>
             )}
 
@@ -477,7 +469,7 @@ export default function ReservationForm({ apartment, price: priceProp }) {
               <p className="text-red-500 text-sm">{errors.policyCheck.message}</p>
             )}
 
-            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={isSubmitting}>
+            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit Reservation'}
             </Button>
           </form>
