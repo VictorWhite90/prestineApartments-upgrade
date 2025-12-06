@@ -95,7 +95,7 @@ export default function Navbar() {
 
             {/* Mobile Menu Button */}
             <button
-              className="lg:hidden relative p-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
+              className="lg:hidden relative p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 hover:scale-110 hover:shadow-lg"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
@@ -103,7 +103,7 @@ export default function Navbar() {
                 animate={isOpen ? { rotate: 180 } : { rotate: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                {isOpen ? <X size={24} /> : <Menu size={24} />}
+                {isOpen ? <X size={20} /> : <Menu size={20} />}
               </motion.div>
             </button>
           </div>
@@ -126,10 +126,11 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'tween', duration: 0.3 }}
-              className="fixed top-0 right-0 bottom-0 w-80 bg-gradient-to-b from-white to-gray-50 z-50 lg:hidden shadow-2xl"
+              className="fixed top-0 right-0 bottom-0 w-80 bg-gradient-to-b from-white to-gray-50 z-50 lg:hidden shadow-2xl flex flex-col"
+              style={{ overscrollBehavior: 'contain' }}
             >
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-6 border-b-2 border-blue-600 bg-blue-600">
+              <div className="flex flex-col h-full overflow-hidden">
+                <div className="flex items-center justify-between p-6 border-b-2 border-blue-600 bg-blue-600 flex-shrink-0">
                   <img
                     src="/images/prestine ;ogo.png"
                     alt="Prestine Apartments"
@@ -143,7 +144,7 @@ export default function Navbar() {
                     <X size={24} />
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white">
+                <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white" style={{ overscrollBehavior: 'contain' }}>
                   <ul className="space-y-2">
                     {navLinks.map((link, idx) => (
                       <motion.li

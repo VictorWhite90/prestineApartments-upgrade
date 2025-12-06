@@ -170,7 +170,7 @@ export default function Apartments() {
                           <span className="text-sm font-bold text-gray-900">{apartment.rating || 4.9}</span>
                         </div>
                       </div>
-                      <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-2xl">
+                      <div className="absolute top-4 right-6 bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-2xl">
                         <div className="flex flex-col items-end">
                           {apartment.originalPrice ? (
                             <>
@@ -210,22 +210,23 @@ export default function Apartments() {
                     }}
                     className={`space-y-6 max-w-[95%] md:max-w-[90%] mx-auto ${!isEven ? 'lg:col-start-1' : ''}`}
                   >
-                    <div>
-                      <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 break-words font-serif">
+                    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6 border-2 border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+                      <h2 className="relative text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 break-words font-serif">
                         {apartment.name}
                       </h2>
-                      <div className="flex items-center gap-2 text-gray-600 mb-4">
-                        <MapPin className="h-5 w-5 text-orange-600" />
+                      <div className="relative flex items-center gap-2 text-gray-600 mb-4">
+                        <MapPin className="h-5 w-5 text-blue-600" />
                         <span className="text-lg">{apartment.location}</span>
                       </div>
+
+                      <p className="relative text-base md:text-lg text-gray-700 leading-relaxed break-words">
+                        {apartment.description}
+                      </p>
                     </div>
 
-                    <p className="text-base md:text-lg text-gray-700 leading-relaxed break-words">
-                      {apartment.description}
-                    </p>
-
                     {/* Features Grid */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-2 gap-4 p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-100 shadow-md">
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <Users className="h-5 w-5 text-blue-600" />
                         <span><strong>{apartment.details.maxGuests}</strong> Guests</span>
@@ -245,8 +246,8 @@ export default function Apartments() {
                     </div>
 
                     {/* Features List */}
-                    <div className="pt-4 border-t border-gray-200">
-                      <p className="text-base font-semibold text-gray-900 mb-3">Key Features:</p>
+                    <div className="p-6 bg-gradient-to-br from-blue-50 via-white to-blue-50 rounded-xl border-2 border-blue-100 shadow-md">
+                      <p className="text-base font-semibold text-blue-900 mb-3">Key Features:</p>
                       <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {apartment.features.map((feature, idx) => (
                           <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">

@@ -222,12 +222,12 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className={`absolute inset-0 flex ${getTextPosition(heroImages[currentSlide].text.position)}`}
           >
-            <div className="text-white z-10 max-w-4xl px-4 pb-16 md:pb-24">
+            <div className="text-white z-10 max-w-4xl px-4 pb-20 md:pb-32 pt-12 md:pt-16">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, type: "spring", stiffness: 50 }}
-                className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-light mb-2 tracking-tight drop-shadow-2xl"
+                className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif font-light mb-2 tracking-tight drop-shadow-2xl"
                 style={{
                   textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 8px 40px rgba(37,99,235,0.3)'
                 }}
@@ -238,7 +238,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, type: "spring", stiffness: 50 }}
-                className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-serif font-light mb-4 tracking-tight drop-shadow-2xl"
+                className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif font-light mb-3 tracking-tight drop-shadow-2xl"
                 style={{
                   textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 8px 40px rgba(37,99,235,0.3)'
                 }}
@@ -249,7 +249,7 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="text-xs sm:text-sm md:text-base text-white/90 font-light max-w-xl mt-4 md:mt-6 drop-shadow-lg mb-8 md:mb-10"
+                className="text-xs sm:text-xs md:text-sm text-white/90 font-light max-w-xl mt-3 md:mt-4 drop-shadow-lg mb-6 md:mb-8"
               >
                 {heroImages[currentSlide].text.tagline}
               </motion.p>
@@ -259,9 +259,9 @@ export default function Home() {
                 transition={{ delay: 0.9 }}
               >
                 <Link to="/apartments">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 animate-pulse-glow">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 sm:px-8 sm:py-4 text-xs sm:text-base font-semibold shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 w-auto">
                     Explore Apartments
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </Link>
               </motion.div>
@@ -594,8 +594,8 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-12 md:py-16 lg:py-24 bg-white">
-        <div className="container mx-auto px-4 md:px-8">
+      <section className="py-12 md:py-16 lg:py-24 bg-white overflow-x-hidden">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -620,7 +620,7 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 max-w-full pt-4 pb-4">
             {whyChooseUs.map((item, index) => (
               <motion.div
                 key={index}
@@ -628,28 +628,25 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1, type: "spring", stiffness: 100 }}
-                className="group relative"
+                className="group relative w-full"
                 whileHover={{ y: -8, transition: { duration: 0.2 } }}
               >
                 {/* Glow effect on hover */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition duration-500"></div>
 
-                <Card className="relative h-full hover:shadow-2xl transition-all duration-500 border-0 shadow-lg bg-white overflow-hidden">
-                  {/* Animated background pattern */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
-
+                <Card className="relative h-full hover:shadow-2xl transition-all duration-500 border-0 shadow-lg bg-white overflow-hidden w-full">
                   <CardHeader className="text-center relative z-10">
                     <motion.div
                       whileHover={{ rotate: 360 }}
                       transition={{ duration: 0.6 }}
-                      className={`w-16 h-16 mx-auto mb-4 rounded-full ${index % 2 === 0 ? 'bg-blue-100' : 'bg-blue-600'} flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-lg`}
+                      className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-full ${index % 2 === 0 ? 'bg-blue-100' : 'bg-blue-600'} flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-lg`}
                     >
-                      <item.icon className={`h-8 w-8 ${index % 2 === 0 ? 'text-blue-600' : 'text-white'}`} />
+                      <item.icon className={`h-7 w-7 sm:h-8 sm:w-8 ${index % 2 === 0 ? 'text-blue-600' : 'text-white'}`} />
                     </motion.div>
-                    <CardTitle className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">{item.title}</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300 break-words">{item.title}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 text-center text-sm leading-relaxed">{item.description}</p>
+                  <CardContent className="px-4 pb-6">
+                    <p className="text-gray-600 text-center text-xs sm:text-sm leading-relaxed break-words">{item.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>

@@ -187,78 +187,58 @@ export default function ApartmentDetail() {
           {/* Left Column - Details */}
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Card>
-                <CardHeader className="bg-gray-500/20 border-b border-gray-300">
-                  <CardTitle className="text-gray-900">About This Apartment</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 leading-relaxed">
-                    {apartment.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <Card>
+              <CardHeader>
+                <CardTitle>About This Apartment</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">{apartment.description}</p>
+              </CardContent>
+            </Card>
 
             {/* Features */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              <Card>
-                <CardHeader className="bg-gray-500/20 border-b border-gray-300">
-                  <CardTitle className="text-gray-900">Features</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {apartment.features.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <span className="text-gray-700">●</span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Features</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {apartment.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-orange-600 rounded-full"></span>
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
 
             {/* Details Grid */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Card>
-                <CardHeader className="bg-gray-500/20 border-b border-gray-300">
-                  <CardTitle className="text-gray-900">Apartment Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">Electricity</p>
-                      <p className="font-bold text-gray-900">{apartment.details.electricity}</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">Max Guests</p>
-                      <p className="font-bold text-gray-900">{apartment.details.maxGuests}</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">Bed Size</p>
-                      <p className="font-bold text-gray-900">{apartment.details.bedSize}</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-500/20 border border-gray-300 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">Bathrooms</p>
-                      <p className="font-bold text-gray-900">{apartment.details.bathrooms}</p>
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Apartment Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Electricity</p>
+                    <p className="font-bold text-gray-900">{apartment.details.electricity}</p>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Max Guests</p>
+                    <p className="font-bold text-gray-900">{apartment.details.maxGuests}</p>
+                  </div>
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Bed Size</p>
+                    <p className="font-bold text-gray-900">{apartment.details.bedSize}</p>
+                  </div>
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Bathrooms</p>
+                    <p className="font-bold text-gray-900">{apartment.details.bathrooms}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Column - Reservation Form */}
