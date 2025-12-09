@@ -226,20 +226,17 @@ export default function Admin() {
         }
       }
 
-      if ((newStatus === 'cancelled' || newStatus === 'reservation_failed') && booking) {
+      // Only send email for automatic reservation failures (not manual admin cancellations)
+      if (newStatus === 'reservation_failed' && booking) {
         try {
-          const checkinDate = booking.checkin_date?.toDate ? 
-            booking.checkin_date.toDate().toISOString().split('T')[0] : 
+          const checkinDate = booking.checkin_date?.toDate ?
+            booking.checkin_date.toDate().toISOString().split('T')[0] :
             booking.checkin_date
-          const checkoutDate = booking.checkout_date?.toDate ? 
-            booking.checkout_date.toDate().toISOString().split('T')[0] : 
+          const checkoutDate = booking.checkout_date?.toDate ?
+            booking.checkout_date.toDate().toISOString().split('T')[0] :
             booking.checkout_date
 
-          const message =
-            statusMessage ||
-            (newStatus === 'cancelled'
-              ? 'Booking cancelled - please contact support for more details.'
-              : 'Reservation not successful - payment window (48 hours) elapsed.')
+          const message = statusMessage || 'Reservation not successful - payment window (48 hours) elapsed.'
 
           const templateParams = {
             user_title: booking.user_title || '',
@@ -292,9 +289,9 @@ export default function Admin() {
         if (newStatus === 'booking_successful') {
           alert('Booking confirmed! Confirmation email has been sent to the guest.')
         } else if (newStatus === 'cancelled') {
-          alert('Booking cancelled. Guest has been notified.')
+          alert('Booking cancelled successfully.')
         } else if (newStatus === 'reservation_failed') {
-          alert('Reservation marked as not successful.')
+          alert('Reservation marked as not successful. Notification email sent.')
         }
       }
     } catch (error) {

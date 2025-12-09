@@ -140,7 +140,7 @@ export default function ReservationForm({ apartment, price: priceProp }) {
         last_name: data.last_name,
         user_email: data.user_email,
         user_phone: data.user_phone,
-        // Include userId if user is logged in (optional - allows guest bookings)
+
         userId: user?.uid || null,
         userName: `${data.first_name} ${data.last_name}`,
         phoneNumber: data.user_phone,
@@ -317,7 +317,6 @@ export default function ReservationForm({ apartment, price: priceProp }) {
                       selectsStart
                       startDate={checkinDate}
                       endDate={checkoutDate}
-                      minDate={new Date()}
                       excludeDates={blockedDates}
                       placeholderText="Select check-in date"
                       dateFormat="MM/dd/yyyy"
@@ -325,15 +324,6 @@ export default function ReservationForm({ apartment, price: priceProp }) {
                       disabled={loadingDates}
                       wrapperClassName="w-full"
                       calendarClassName="shadow-xl"
-                      filterDate={(date) => {
-                        // Disable past dates
-                        const today = new Date()
-                        today.setHours(0, 0, 0, 0)
-                        const checkDate = new Date(date)
-                        checkDate.setHours(0, 0, 0, 0)
-                        if (checkDate < today) return false
-                        return true
-                      }}
                     />
                   </div>
                 )}
@@ -372,7 +362,7 @@ export default function ReservationForm({ apartment, price: priceProp }) {
                       selectsEnd
                       startDate={checkinDate}
                       endDate={checkoutDate}
-                      minDate={checkinDate ? new Date(checkinDate.getTime() + 86400000) : new Date()}
+                      minDate={checkinDate ? new Date(checkinDate.getTime() + 86400000) : null}
                       excludeDates={blockedDates}
                       placeholderText="Select check-out date"
                       dateFormat="MM/dd/yyyy"
@@ -381,7 +371,7 @@ export default function ReservationForm({ apartment, price: priceProp }) {
                       wrapperClassName="w-full"
                       calendarClassName="shadow-xl"
                       filterDate={(date) => {
-                        // Disable dates before or equal to check-in
+                        // Only disable dates before or equal to check-in (allow past dates)
                         if (checkinDate) {
                           const checkin = new Date(checkinDate)
                           checkin.setHours(0, 0, 0, 0)
@@ -389,12 +379,6 @@ export default function ReservationForm({ apartment, price: priceProp }) {
                           checkDate.setHours(0, 0, 0, 0)
                           if (checkDate <= checkin) return false
                         }
-                        // Disable past dates
-                        const today = new Date()
-                        today.setHours(0, 0, 0, 0)
-                        const checkDate = new Date(date)
-                        checkDate.setHours(0, 0, 0, 0)
-                        if (checkDate < today) return false
                         return true
                       }}
                     />

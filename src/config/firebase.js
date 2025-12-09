@@ -7,15 +7,15 @@ import { getAuth } from 'firebase/auth'
 // For local development: Create .env.local file (not committed to Git)
 // For production: Set in Vercel Dashboard -> Environment Variables
 
-// Fallback values for development (remove in production)
+// Environment variables are required - no fallback values for security
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAXC5dIeiiVyzU67SOwouiey55oRjNYiXA",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "prestine-apartment-db.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "prestine-apartment-db",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "prestine-apartment-db.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "663731777064",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:663731777064:web:dc8af8f7c472d694894f1d",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-SFKKGNX0QQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 }
 
 // Validate environment variables
