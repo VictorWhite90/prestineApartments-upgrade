@@ -7,6 +7,7 @@ import ReservationForm from '@/components/ReservationForm'
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { initAllTracking, trackFacebookPageView, trackGooglePageView } from '@/utils/tracking'
 
 export default function ApartmentDetail() {
   const { slug } = useParams()
@@ -49,6 +50,13 @@ export default function ApartmentDetail() {
 
     return () => clearInterval(interval)
   }, [currentPositionIndex])
+
+  // Initialize tracking scripts
+  useEffect(() => {
+    initAllTracking()
+    trackFacebookPageView()
+    trackGooglePageView(`/apartments/${slug}`)
+  }, [slug])
 
   if (!apartment) {
     return (

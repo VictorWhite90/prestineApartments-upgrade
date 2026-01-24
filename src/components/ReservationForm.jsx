@@ -15,6 +15,7 @@ import { createTemporaryBooking, checkDateAvailability, getBlockedDates } from '
 import { apartments } from '@/data/apartments'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/hooks/useAuth'
+import { trackFacebookLead } from '@/utils/tracking'
 
 export default function ReservationForm({ apartment, price: priceProp }) {
   // Use the price passed as prop, or default to apartment.price (which is already the promo price if applicable)
@@ -199,6 +200,9 @@ export default function ReservationForm({ apartment, price: priceProp }) {
         console.error('EmailJS Error (booking still saved):', emailError)
         // Continue even if email fails - booking is saved to Firestore
       }
+
+      // Track Lead event for Facebook Pixel
+      trackFacebookLead()
 
       // Redirect to confirmation page on success
       navigate('/confirmation')

@@ -37,9 +37,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-// ⚠️ REPLACE THIS WITH YOUR USER'S UID FROM FIREBASE CONSOLE
-// To get UID: Firebase Console > Authentication > Users > Copy User UID
-const USER_UID = 'qi2fV0dH9NbafpA46dMf10AbzqG2'; // <-- REPLACE THIS!
+const USER_UID = '3hmLuD7CBuMbYUIYv7IVh2xhCU13'; 
 
 if (USER_UID === 'USER_UID_HERE') {
   console.error('❌ Error: Please replace USER_UID_HERE with your actual user UID!');

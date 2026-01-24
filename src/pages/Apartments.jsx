@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button'
 import { apartments } from '@/data/apartments'
 import { ArrowRight, MapPin, Users, Home, Star, Bed, Bath, Wifi, ChevronLeft, ChevronRight } from 'lucide-react'
+import { initAllTracking, trackFacebookPageView, trackGooglePageView } from '@/utils/tracking'
 
 export default function Apartments() {
   // Reorder apartments: 1-bedroom first, Lugbe last
@@ -38,6 +39,13 @@ export default function Apartments() {
 
     return () => clearInterval(interval)
   }, [heroImages.length])
+
+  // Initialize tracking scripts
+  useEffect(() => {
+    initAllTracking()
+    trackFacebookPageView()
+    trackGooglePageView('/apartments')
+  }, [])
 
   const nextHeroSlide = () => {
     setCurrentHeroSlide((prev) => (prev + 1) % heroImages.length)

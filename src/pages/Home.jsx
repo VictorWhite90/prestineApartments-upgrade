@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { apartments } from '@/data/apartments'
-import { ArrowRight, Star, MapPin, Wifi, Car, Shield, Users, HomeIcon, UtensilsCrossed, Dumbbell, Coffee, Sparkles, Award, Clock, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, Star, MapPin, Wifi, Car, Shield, Users, HomeIcon, UtensilsCrossed, Sparkles, Award, Clock, Phone, Mail, ChevronLeft, ChevronRight, Waves, Building2, Scissors, ChefHat, Trophy } from 'lucide-react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { initAllTracking, trackFacebookPageView, trackGooglePageView } from '@/utils/tracking'
 
 export default function Home() {
   // Exclude Prestige-Suite-2-Bedroom-Apartment-Lugbe and show other 3 apartments
@@ -99,6 +100,13 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [heroImages.length])
 
+  // Initialize tracking scripts
+  useEffect(() => {
+    initAllTracking()
+    trackFacebookPageView()
+    trackGooglePageView('/')
+  }, [])
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroImages.length)
   }
@@ -155,8 +163,12 @@ export default function Home() {
     { icon: Users, title: "Concierge Service", description: "Dedicated concierge support" },
     { icon: HomeIcon, title: "Fully Furnished", description: "Modern furniture and appliances" },
     { icon: UtensilsCrossed, title: "Fully Equipped Kitchen", description: "Complete kitchen facilities" },
-    { icon: Dumbbell, title: "Fitness Facilities", description: "Access to fitness centers" },
-    { icon: Coffee, title: "Refreshments", description: "Complimentary tea and coffee" },
+    { icon: Trophy, title: "Recreation Facilities", description: "Lawn tennis, snooker board" },
+    { icon: Waves, title: "Swimming Pool", description: "Refreshing pool facilities" },
+    { icon: Building2, title: "Conference & Training", description: "Professional meeting facilities" },
+    { icon: UtensilsCrossed, title: "Restaurants", description: "On-site dining options" },
+    { icon: Scissors, title: "Beauty Saloons", description: "Professional beauty services" },
+    { icon: ChefHat, title: "Indoor/Outdoor Catering", description: "Full catering services available" },
   ]
 
   const whyChooseUs = [
