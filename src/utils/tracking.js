@@ -69,6 +69,7 @@ export const initClarity = () => {
     return
   }
 
+  // Microsoft Clarity tracking code
   ;(function(c, l, a, r, i, t, y) {
     c[a] = c[a] || function() {
       (c[a].q = c[a].q || []).push(arguments)
@@ -96,13 +97,13 @@ export const initGoogleAnalytics = () => {
     return
   }
 
-  // Load gtag.js script
+  // Load Google tag (gtag.js)
   const script = document.createElement('script')
   script.async = true
   script.src = 'https://www.googletagmanager.com/gtag/js?id=G-YTY8FXJJJ0'
   document.head.appendChild(script)
 
-  // Initialize dataLayer and gtag
+  // Initialize dataLayer and gtag function
   window.dataLayer = window.dataLayer || []
   function gtag() {
     window.dataLayer.push(arguments)
