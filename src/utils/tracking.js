@@ -111,10 +111,12 @@ export const initGoogleAnalytics = () => {
   window.gtag = gtag
   gtag('js', new Date())
   gtag('config', 'G-YTY8FXJJJ0')
+  gtag('config', 'AW-16944698468') // Google Ads conversion tracking
   
   if (DEBUG_TRACKING) {
     console.log('✅ Google Analytics initialized')
     console.log('📊 Google Analytics ID: G-YTY8FXJJJ0')
+    console.log('📊 Google Ads ID: AW-16944698468')
   }
 }
 
@@ -127,6 +129,18 @@ export const trackGooglePageView = (path) => {
     if (DEBUG_TRACKING) console.log(`📊 Google Analytics: PageView tracked for ${path}`)
   } else if (DEBUG_TRACKING) {
     console.warn('⚠️ Google Analytics not initialized yet')
+  }
+}
+
+// Track Google Ads Conversion
+export const trackGoogleAdsConversion = (conversionId) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'conversion', {
+      send_to: `AW-16944698468/${conversionId}`
+    })
+    if (DEBUG_TRACKING) console.log(`🎯 Google Ads: Conversion tracked - ${conversionId}`)
+  } else if (DEBUG_TRACKING) {
+    console.warn('⚠️ Google Ads not initialized yet')
   }
 }
 
@@ -164,6 +178,7 @@ export const verifyTracking = () => {
   
   if (status.facebookPixel && status.clarity && status.googleAnalytics) {
     console.log('✅ All tracking scripts are loaded and ready!')
+    console.log('📊 Includes: Facebook Pixel, Microsoft Clarity, Google Analytics & Google Ads')
   } else {
     console.warn('⚠️ Some tracking scripts may not be loaded:', status)
   }

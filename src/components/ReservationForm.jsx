@@ -15,7 +15,7 @@ import { createTemporaryBooking, checkDateAvailability, getBlockedDates } from '
 import { apartments } from '@/data/apartments'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/hooks/useAuth'
-import { trackFacebookLead } from '@/utils/tracking'
+import { trackFacebookLead, trackGoogleAdsConversion } from '@/utils/tracking'
 
 export default function ReservationForm({ apartment, price: priceProp }) {
   // Use the price passed as prop, or default to apartment.price (which is already the promo price if applicable)
@@ -203,6 +203,9 @@ export default function ReservationForm({ apartment, price: priceProp }) {
 
       // Track Lead event for Facebook Pixel
       trackFacebookLead()
+
+      // Track Google Ads Conversion (replace 'YOUR_CONVERSION_ID' with actual ID from Google Ads)
+      trackGoogleAdsConversion('YOUR_CONVERSION_ID')
 
       // Redirect to confirmation page on success
       navigate('/confirmation')

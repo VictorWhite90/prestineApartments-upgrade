@@ -41,8 +41,8 @@ Open browser console and type:
 // Check if tracking is loaded
 window.fbq        // Should show function (Facebook Pixel)
 window.clarity    // Should show function (Clarity)
-window.gtag       // Should show function (Google Analytics)
-window.dataLayer  // Should show array (Google Analytics)
+window.gtag       // Should show function (Google Analytics & Google Ads)
+window.dataLayer  // Should show array (Google Analytics & Google Ads)
 ```
 
 ### 4. **Test Lead Event**
@@ -79,6 +79,7 @@ Install these browser extensions to verify:
 4. **Data Collection**: 
    - Facebook Pixel: Check Facebook Events Manager
    - Google Analytics: Check Google Analytics dashboard
+   - Google Ads: Check Google Ads conversion tracking
    - Clarity: Check Microsoft Clarity dashboard
 
 ## 🚀 Testing on Vercel
