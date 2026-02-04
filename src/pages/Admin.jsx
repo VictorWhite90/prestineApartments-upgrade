@@ -351,6 +351,7 @@ export default function Admin() {
     setNegotiatedPrice('')
     setIsNegotiated(false)
     setPaymentModalOpen(true)
+    document.body.style.overflow = 'hidden'
   }
 
   const closePaymentModal = () => {
@@ -361,6 +362,7 @@ export default function Admin() {
     setNegotiatedPrice('')
     setIsNegotiated(false)
     setConfirmingPayment(false)
+    document.body.style.overflow = ''
   }
 
   const handleConfirmPayment = async () => {
@@ -504,6 +506,7 @@ export default function Admin() {
     })
     setExtendError('')
     setExtendModalOpen(true)
+    document.body.style.overflow = 'hidden'
   }
 
   const closeExtendModal = () => {
@@ -511,6 +514,7 @@ export default function Admin() {
     setExtendBooking(null)
     setExtendError('')
     setExtending(false)
+    document.body.style.overflow = ''
   }
 
   const handleExtendStaySubmit = async () => {
@@ -962,8 +966,8 @@ export default function Admin() {
       </div>
 
       {paymentModalOpen && paymentBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 overflow-y-auto py-6">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 my-auto max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="text-2xl font-serif font-semibold text-gray-900">Confirm Payment</h3>
               <p className="text-sm text-gray-500 mt-1">
