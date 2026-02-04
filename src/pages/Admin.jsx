@@ -47,6 +47,11 @@ export default function Admin() {
   const [confirmingPayment, setConfirmingPayment] = useState(false)
   const [negotiatedPrice, setNegotiatedPrice] = useState('')
   const [isNegotiated, setIsNegotiated] = useState(false)
+  const [additionalPaymentModalOpen, setAdditionalPaymentModalOpen] = useState(false)
+  const [additionalPaymentBooking, setAdditionalPaymentBooking] = useState(null)
+  const [additionalAmountPaid, setAdditionalAmountPaid] = useState('')
+  const [additionalPaymentError, setAdditionalPaymentError] = useState('')
+  const [confirmingAdditionalPayment, setConfirmingAdditionalPayment] = useState(false)
   const processedAutoCancelRef = useRef(new Set())
   const applyLocalBookingUpdate = (bookingId, updates) => {
     setBookings((prev) =>
@@ -363,6 +368,125 @@ export default function Admin() {
     setIsNegotiated(false)
     setConfirmingPayment(false)
     document.body.style.overflow = ''
+  }
+
+  const openAdditionalPaymentModal = (booking) => {
+    setAdditionalPaymentBooking(booking)
+    setAdditionalAmountPaid('')
+    setAdditionalPaymentError('')
+    setAdditionalPaymentModalOpen(true)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeAdditionalPaymentModal = () => {
+    setAdditionalPaymentModalOpen(false)
+    setAdditionalPaymentBooking(null)
+    setAdditionalAmountPaid('')
+    setAdditionalPaymentError('')
+    setConfirmingAdditionalPayment(false)
+    document.body.style.overflow = ''
+  }
+
+  const handleAdditionalPayment = async () => {
+    if (!additionalPaymentBooking) return
+
+    const parsedAmount = parseFloat(additionalAmountPaid)
+    if (!additionalAmountPaid || isNaN(parsedAmount) || parsedAmount <= 0) {
+      setAdditionalPaymentError('Please enter a valid payment amount.')
+      return
+    }
+
+    const currentBalance = additionalPaymentBooking.balance || 0
+    if (parsedAmount > currentBalance) {
+      setAdditionalPaymentError('Amount cannot exceed the outstanding balance.')
+      return
+    }
+
+    setConfirmingAdditionalPayment(true)
+    setAdditionalPaymentError('')
+
+    try {
+      const previouslyPaid = additionalPaymentBooking.amount_paid || 0
+      const newTotalPaid = previouslyPaid + parsedAmount
+      const newBalance = currentBalance - parsedAmount
+
+      const updateResult = await updateBookingStatus(additionalPaymentBooking.id, 'booking_successful', {
+        amount_paid: newTotalPaid,
+        balance: newBalance,
+      })
+
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Failed to update payment')
+      }
+
+      const checkinDate = additionalPaymentBooking.checkin_date?.toDate ?
+        additionalPaymentBooking.checkin_date.toDate().toISOString().split('T')[0] :
+        additionalPaymentBooking.checkin_date
+      const checkoutDate = additionalPaymentBooking.checkout_date?.toDate ?
+        additionalPaymentBooking.checkout_date.toDate().toISOString().split('T')[0] :
+        additionalPaymentBooking.checkout_date
+
+      const paymentDate = new Date()
+      const formattedPaymentDate = paymentDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+
+      const effectiveTotal = additionalPaymentBooking.negotiated_price || additionalPaymentBooking.grand_total || 0
+
+      const templateParams = {
+        user_title: additionalPaymentBooking.user_title || '',
+        first_name: additionalPaymentBooking.first_name || '',
+        last_name: additionalPaymentBooking.last_name || '',
+        user_email: additionalPaymentBooking.user_email || '',
+        user_phone: additionalPaymentBooking.user_phone || '',
+        checkin_date: checkinDate,
+        checkout_date: checkoutDate,
+        payment_date: formattedPaymentDate,
+        guest_number: additionalPaymentBooking.guest_number || '',
+        apartment_name: additionalPaymentBooking.apartment_name || '',
+        room_rate: `₦${formatNumberWithCommas(additionalPaymentBooking.room_rate || additionalPaymentBooking.price_per_night || 0)}`,
+        price_per_night: `₦${formatNumberWithCommas(additionalPaymentBooking.price_per_night || additionalPaymentBooking.room_rate || 0)}/night`,
+        subtotal: `₦${formatNumberWithCommas(additionalPaymentBooking.subtotal || 0)}`,
+        vat_amount: `₦${formatNumberWithCommas(additionalPaymentBooking.vat_amount || 0)}`,
+        service_charge: `₦${formatNumberWithCommas(additionalPaymentBooking.service_charge || 0)}`,
+        grand_total: `₦${formatNumberWithCommas(effectiveTotal)}`,
+        amount_paid: `₦${formatNumberWithCommas(newTotalPaid)}`,
+        balance: `₦${formatNumberWithCommas(newBalance)}`,
+        total_nights: additionalPaymentBooking.total_nights || 0,
+        booking_status: newBalance === 0 ? 'Payment Complete - Full Balance Settled' : 'Additional Payment Received',
+      }
+
+      try {
+        await emailjs.send(
+          emailjsConfig.serviceId,
+          emailjsConfig.templateIdCompany,
+          templateParams
+        )
+      } catch (emailError) {
+        console.error('Email sending failed (payment still updated):', emailError)
+      }
+
+      applyLocalBookingUpdate(additionalPaymentBooking.id, {
+        amount_paid: newTotalPaid,
+        balance: newBalance,
+        updatedAt: new Date()
+      })
+
+      await fetchBookings()
+      closeAdditionalPaymentModal()
+      alert(newBalance === 0
+        ? 'Full balance settled! Confirmation email sent.'
+        : 'Additional payment recorded! Updated email sent.')
+    } catch (error) {
+      console.error('Error updating additional payment:', error)
+      setAdditionalPaymentError(`Failed to update payment: ${error.message || error}. Please try again.`)
+    } finally {
+      setConfirmingAdditionalPayment(false)
+    }
   }
 
   const handleConfirmPayment = async () => {
@@ -924,6 +1048,16 @@ export default function Admin() {
                               )}
                               {booking.status === 'booking_successful' && (
                                 <>
+                                  {booking.balance > 0 && (
+                                    <Button
+                                      size="sm"
+                                      className="bg-orange-500 hover:bg-orange-600 text-white w-full"
+                                      onClick={() => openAdditionalPaymentModal(booking)}
+                                      disabled={updatingId === booking.id}
+                                    >
+                                      Update Payment
+                                    </Button>
+                                  )}
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -1109,6 +1243,108 @@ export default function Admin() {
                 disabled={confirmingPayment || !amountPaid}
               >
                 {confirmingPayment ? 'Confirming...' : 'Confirm Payment & Send Email'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {additionalPaymentModalOpen && additionalPaymentBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 overflow-y-auto py-6">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 my-auto max-h-[90vh] overflow-y-auto">
+            <div>
+              <h3 className="text-2xl font-serif font-semibold text-gray-900">Update Payment</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Record additional payment for {additionalPaymentBooking.first_name} {additionalPaymentBooking.last_name}
+              </p>
+            </div>
+
+            <div className="bg-orange-50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Apartment:</span>
+                <span className="font-semibold text-gray-900">{additionalPaymentBooking.apartment_name}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Total Price:</span>
+                <span className="font-semibold text-gray-900">
+                  ₦{formatNumberWithCommas(additionalPaymentBooking.negotiated_price || additionalPaymentBooking.grand_total || 0)}
+                  {additionalPaymentBooking.negotiated_price && (
+                    <span className="text-xs text-blue-600 ml-1">(Negotiated)</span>
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Previously Paid:</span>
+                <span className="font-semibold text-green-700">₦{formatNumberWithCommas(additionalPaymentBooking.amount_paid || 0)}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-orange-200">
+                <span className="text-gray-600">Outstanding Balance:</span>
+                <span className="font-bold text-orange-600 text-lg">₦{formatNumberWithCommas(additionalPaymentBooking.balance || 0)}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">
+                Additional Amount Paid
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={additionalPaymentBooking.balance || 0}
+                  value={additionalAmountPaid}
+                  onChange={(e) => setAdditionalAmountPaid(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-3 border-2 border-orange-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-semibold"
+                />
+              </div>
+            </div>
+
+            {additionalAmountPaid && !isNaN(parseFloat(additionalAmountPaid)) && parseFloat(additionalAmountPaid) > 0 && (() => {
+              const addBalance = Math.max(0, (additionalPaymentBooking.balance || 0) - parseFloat(additionalAmountPaid))
+              const addTotalPaid = (additionalPaymentBooking.amount_paid || 0) + parseFloat(additionalAmountPaid)
+              return (
+                <div className="bg-green-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">New Total Paid:</span>
+                    <span className="font-bold text-green-700">₦{formatNumberWithCommas(addTotalPaid)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Remaining Balance:</span>
+                    <span className={`font-bold text-xl ${addBalance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      ₦{formatNumberWithCommas(addBalance)}
+                    </span>
+                  </div>
+                  {addBalance === 0 && (
+                    <p className="text-xs text-green-600 font-semibold">Full balance will be cleared!</p>
+                  )}
+                </div>
+              )
+            })()}
+
+            {additionalPaymentError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {additionalPaymentError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 md:flex-row md:justify-end">
+              <Button
+                variant="outline"
+                className="border-gray-300 text-gray-700"
+                onClick={closeAdditionalPaymentModal}
+                disabled={confirmingAdditionalPayment}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={handleAdditionalPayment}
+                disabled={confirmingAdditionalPayment || !additionalAmountPaid}
+              >
+                {confirmingAdditionalPayment ? 'Updating...' : 'Update Payment & Send Email'}
               </Button>
             </div>
           </div>
