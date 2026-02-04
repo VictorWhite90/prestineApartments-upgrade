@@ -45,6 +45,8 @@ export default function Admin() {
   const [amountPaid, setAmountPaid] = useState('')
   const [paymentError, setPaymentError] = useState('')
   const [confirmingPayment, setConfirmingPayment] = useState(false)
+  const [negotiatedPrice, setNegotiatedPrice] = useState('')
+  const [isNegotiated, setIsNegotiated] = useState(false)
   const processedAutoCancelRef = useRef(new Set())
   const applyLocalBookingUpdate = (bookingId, updates) => {
     setBookings((prev) =>
@@ -346,6 +348,8 @@ export default function Admin() {
     setPaymentBooking(booking)
     setAmountPaid('')
     setPaymentError('')
+    setNegotiatedPrice('')
+    setIsNegotiated(false)
     setPaymentModalOpen(true)
   }
 
@@ -354,6 +358,8 @@ export default function Admin() {
     setPaymentBooking(null)
     setAmountPaid('')
     setPaymentError('')
+    setNegotiatedPrice('')
+    setIsNegotiated(false)
     setConfirmingPayment(false)
   }
 
@@ -367,8 +373,23 @@ export default function Admin() {
     }
 
     const grandTotal = paymentBooking.grand_total || 0
-    if (parsedAmount > grandTotal) {
-      setPaymentError('Amount paid cannot exceed the grand total.')
+    const parsedNegotiatedPrice = isNegotiated ? parseFloat(negotiatedPrice) : null
+    const effectiveTotal = (isNegotiated && parsedNegotiatedPrice && !isNaN(parsedNegotiatedPrice) && parsedNegotiatedPrice > 0)
+      ? parsedNegotiatedPrice
+      : grandTotal
+
+    if (isNegotiated && (!parsedNegotiatedPrice || isNaN(parsedNegotiatedPrice) || parsedNegotiatedPrice <= 0)) {
+      setPaymentError('Please enter a valid negotiated price.')
+      return
+    }
+
+    if (isNegotiated && parsedNegotiatedPrice > grandTotal) {
+      setPaymentError('Negotiated price cannot exceed the original grand total.')
+      return
+    }
+
+    if (parsedAmount > effectiveTotal) {
+      setPaymentError(`Amount paid cannot exceed the ${isNegotiated ? 'negotiated price' : 'grand total'}.`)
       return
     }
 
@@ -376,14 +397,20 @@ export default function Admin() {
     setPaymentError('')
 
     try {
-      const balance = grandTotal - parsedAmount
+      const balance = effectiveTotal - parsedAmount
 
-      // Update booking with amount_paid and balance
-      const updateResult = await updateBookingStatus(paymentBooking.id, 'booking_successful', {
+      // Update booking with amount_paid, balance, and negotiated_price if applicable
+      const additionalData = {
         amount_paid: parsedAmount,
         balance: balance,
         paymentDate: new Date()
-      })
+      }
+
+      if (isNegotiated && parsedNegotiatedPrice) {
+        additionalData.negotiated_price = parsedNegotiatedPrice
+      }
+
+      const updateResult = await updateBookingStatus(paymentBooking.id, 'booking_successful', additionalData)
 
       if (!updateResult.success) {
         throw new Error(updateResult.error || 'Failed to update booking')
@@ -422,9 +449,9 @@ export default function Admin() {
         subtotal: `₦${formatNumberWithCommas(paymentBooking.subtotal || 0)}`,
         vat_amount: `₦${formatNumberWithCommas(paymentBooking.vat_amount || 0)}`,
         service_charge: `₦${formatNumberWithCommas(paymentBooking.service_charge || 0)}`,
-        grand_total: `₦${formatNumberWithCommas(grandTotal)}`,
+        grand_total: `₦${formatNumberWithCommas(isNegotiated && parsedNegotiatedPrice ? parsedNegotiatedPrice : grandTotal)}`,
         amount_paid: `₦${formatNumberWithCommas(parsedAmount)}`,
-        balance: `₦${formatNumberWithCommas(balance)}`, // Balance remaining (0 if fully paid)
+        balance: `₦${formatNumberWithCommas(balance)}`,
         total_nights: paymentBooking.total_nights || 0,
         booking_status: 'Booking Confirmed - Payment Received',
       }
@@ -441,13 +468,17 @@ export default function Admin() {
       }
 
       // Update local state immediately for instant UI feedback
-      applyLocalBookingUpdate(paymentBooking.id, {
+      const localUpdate = {
         status: 'booking_successful',
         amount_paid: parsedAmount,
         balance: balance,
         paymentDate: new Date(),
         updatedAt: new Date()
-      })
+      }
+      if (isNegotiated && parsedNegotiatedPrice) {
+        localUpdate.negotiated_price = parsedNegotiatedPrice
+      }
+      applyLocalBookingUpdate(paymentBooking.id, localUpdate)
 
       // Refresh bookings from Firestore to ensure data consistency
       await fetchBookings()
@@ -457,7 +488,7 @@ export default function Admin() {
       alert('Payment confirmed! Confirmation email has been sent to the guest.')
     } catch (error) {
       console.error('Error confirming payment:', error)
-      setPaymentError('Failed to confirm payment. Please try again.')
+      setPaymentError(`Failed to confirm payment: ${error.message || error}. Please try again.`)
     } finally {
       setConfirmingPayment(false)
     }
@@ -857,9 +888,16 @@ export default function Admin() {
                             </td>
                             <td className="py-4 text-gray-700">
                               {booking.status === 'booking_successful' && (booking.balance !== undefined && booking.balance !== null) ? (
-                                <span className={`font-semibold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-700'}`}>
-                                  ₦{formatNumberWithCommas(booking.balance)}
-                                </span>
+                                <div>
+                                  <span className={`font-semibold ${booking.balance > 0 ? 'text-orange-600' : 'text-green-700'}`}>
+                                    ₦{formatNumberWithCommas(booking.balance)}
+                                  </span>
+                                  {booking.negotiated_price && (
+                                    <p className="text-xs text-blue-600 mt-0.5" title={`Original: ₦${formatNumberWithCommas(booking.grand_total)} → Agreed: ₦${formatNumberWithCommas(booking.negotiated_price)}`}>
+                                      Negotiated
+                                    </p>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-gray-400">-</span>
                               )}
@@ -948,8 +986,56 @@ export default function Admin() {
               </div>
               <div className="flex justify-between text-sm pt-2 border-t border-orange-200">
                 <span className="text-gray-600">Grand Total:</span>
-                <span className="font-bold text-gray-900 text-lg">₦{formatNumberWithCommas(paymentBooking.grand_total || 0)}</span>
+                <span className={`font-bold text-lg ${isNegotiated && negotiatedPrice ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                  ₦{formatNumberWithCommas(paymentBooking.grand_total || 0)}
+                </span>
               </div>
+              {isNegotiated && negotiatedPrice && !isNaN(parseFloat(negotiatedPrice)) && parseFloat(negotiatedPrice) > 0 && (
+                <div className="flex justify-between text-sm pt-1">
+                  <span className="text-blue-600 font-semibold">Agreed Price:</span>
+                  <span className="font-bold text-blue-700 text-lg">₦{formatNumberWithCommas(parseFloat(negotiatedPrice))}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isNegotiated}
+                  onChange={(e) => {
+                    setIsNegotiated(e.target.checked)
+                    if (!e.target.checked) setNegotiatedPrice('')
+                  }}
+                  className="w-4 h-4 accent-blue-600 rounded"
+                />
+                <span className="text-sm font-semibold text-blue-800">
+                  Price was negotiated / discounted
+                </span>
+              </label>
+              {isNegotiated && (
+                <div>
+                  <label className="text-xs text-blue-700 font-semibold block mb-1">
+                    Agreed Negotiated Price
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={paymentBooking.grand_total || 0}
+                      value={negotiatedPrice}
+                      onChange={(e) => setNegotiatedPrice(e.target.value)}
+                      placeholder="Enter agreed price"
+                      className="w-full pl-8 pr-3 py-2 border-2 border-blue-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
+                    />
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Balance will be calculated against this agreed price, not the original total.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -962,7 +1048,7 @@ export default function Admin() {
                   type="number"
                   step="0.01"
                   min="0"
-                  max={paymentBooking.grand_total || 0}
+                  max={(isNegotiated && negotiatedPrice && !isNaN(parseFloat(negotiatedPrice)) && parseFloat(negotiatedPrice) > 0) ? parseFloat(negotiatedPrice) : (paymentBooking.grand_total || 0)}
                   value={amountPaid}
                   onChange={(e) => setAmountPaid(e.target.value)}
                   placeholder="0.00"
@@ -971,26 +1057,32 @@ export default function Admin() {
               </div>
             </div>
 
-            {amountPaid && !isNaN(parseFloat(amountPaid)) && parseFloat(amountPaid) > 0 && (
-              <div className="bg-green-50 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Balance Remaining:</span>
-                  <span className={`font-bold text-xl ${(paymentBooking.grand_total - parseFloat(amountPaid)) > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                    ₦{formatNumberWithCommas(Math.max(0, (paymentBooking.grand_total || 0) - parseFloat(amountPaid)))}
-                  </span>
+            {amountPaid && !isNaN(parseFloat(amountPaid)) && parseFloat(amountPaid) > 0 && (() => {
+              const modalEffectiveTotal = (isNegotiated && negotiatedPrice && !isNaN(parseFloat(negotiatedPrice)) && parseFloat(negotiatedPrice) > 0)
+                ? parseFloat(negotiatedPrice)
+                : (paymentBooking.grand_total || 0)
+              const modalBalance = Math.max(0, modalEffectiveTotal - parseFloat(amountPaid))
+              return (
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Balance Remaining:</span>
+                    <span className={`font-bold text-xl ${modalBalance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      ₦{formatNumberWithCommas(modalBalance)}
+                    </span>
+                  </div>
+                  {modalBalance > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      This is a partial payment. The balance will be tracked in the system.
+                    </p>
+                  )}
+                  {modalBalance === 0 && (
+                    <p className="text-xs text-green-600 mt-2 font-semibold">
+                      {isNegotiated ? 'Full negotiated amount received!' : 'Full payment received!'}
+                    </p>
+                  )}
                 </div>
-                {(paymentBooking.grand_total - parseFloat(amountPaid)) > 0 && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    This is a partial payment. The balance will be tracked in the system.
-                  </p>
-                )}
-                {(paymentBooking.grand_total - parseFloat(amountPaid)) === 0 && (
-                  <p className="text-xs text-green-600 mt-2 font-semibold">
-                    Full payment received!
-                  </p>
-                )}
-              </div>
-            )}
+              )
+            })()}
 
             {paymentError && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
