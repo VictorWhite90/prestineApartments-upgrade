@@ -102,4 +102,3 @@ verifyTracking()
 
 This will show you the status of all tracking scripts.
 
-

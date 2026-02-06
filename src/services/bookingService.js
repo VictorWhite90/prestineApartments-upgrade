@@ -1,14 +1,15 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
+import {
+  collection,
+  addDoc,
+  getDocs,
   getDoc,
-  doc, 
-  updateDoc, 
-  query, 
-  where, 
+  doc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
   orderBy,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore'
 import { db } from '@/config/firebase'
 
@@ -308,6 +309,26 @@ export const getBlockedDates = async (apartmentId) => {
  * @param {Date} newCheckinDate
  * @param {Date} newCheckoutDate
  */
+/**
+ * Permanently delete a booking from Firestore
+ * Use for corrupted/ghost bookings that can't be cancelled normally
+ * @param {string} bookingId - Booking document ID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const deleteBooking = async (bookingId) => {
+  try {
+    const bookingRef = doc(db, BOOKINGS_COLLECTION, bookingId)
+    await deleteDoc(bookingRef)
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting booking:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to delete booking'
+    }
+  }
+}
+
 export const extendBookingStay = async (bookingId, newCheckinDate, newCheckoutDate) => {
   try {
     if (!newCheckinDate || !newCheckoutDate) {

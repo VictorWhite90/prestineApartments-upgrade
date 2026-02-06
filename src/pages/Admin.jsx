@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import { CheckCircle, ClipboardList, Home, Users, Phone, RefreshCw, Search, Filter, XCircle } from 'lucide-react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { getAllBookings, updateBookingStatus, extendBookingStay, checkDateAvailability } from '@/services/bookingService'
+import { getAllBookings, updateBookingStatus, extendBookingStay, checkDateAvailability, deleteBooking } from '@/services/bookingService'
 import { Timestamp } from 'firebase/firestore'
 import emailjs from '@emailjs/browser'
 import { emailjsConfig } from '@/config/emailjs'
@@ -321,6 +321,31 @@ export default function Admin() {
     await handleStatusChange(booking.id, 'cancelled')
   }
 
+  const handleDeleteBooking = async (booking) => {
+    if (!booking) return
+    const guestName = `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || 'this guest'
+    const shouldDelete = window.confirm(
+      `PERMANENTLY DELETE booking for ${guestName}?\n\nThis will remove the booking record entirely from the database. This action cannot be undone.`
+    )
+    if (!shouldDelete) return
+
+    try {
+      setUpdatingId(booking.id)
+      const result = await deleteBooking(booking.id)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete booking')
+      }
+      setBookings((prev) => prev.filter((b) => b.id !== booking.id))
+      await fetchBookings()
+      alert('Booking permanently deleted.')
+    } catch (error) {
+      console.error('Error deleting booking:', error)
+      alert(`Failed to delete booking: ${error.message || error}`)
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
   const resetFilters = () => {
     setSearchTerm('')
     setStatusFilter('all')
@@ -328,25 +353,9 @@ export default function Admin() {
   }
 
   const autoCancelStaleBookings = async () => {
-    const now = new Date()
-    const staleBookings = bookings.filter((booking) => {
-      if (!(booking.status === 'pending_payment' || booking.status === 'temporary')) return false
-      if (processedAutoCancelRef.current.has(booking.id)) return false
-      const createdAt = getDateValue(booking.createdAt)
-      if (!createdAt) return false
-      const hoursDiff = (now - createdAt) / (1000 * 60 * 60)
-      return hoursDiff >= 48
-    })
-
-    if (staleBookings.length === 0) return
-
-    for (const booking of staleBookings) {
-      processedAutoCancelRef.current.add(booking.id)
-      await handleStatusChange(booking.id, 'reservation_failed', {
-        silent: true,
-        statusMessage: 'Reservation not successful - payment was not received within 48 hours.',
-      })
-    }
+    // Disabled auto-cancel to prevent duplicate emails
+    // Stale bookings should be manually reviewed and cancelled by admin
+    return
   }
 
   const openPaymentModal = (booking) => {
