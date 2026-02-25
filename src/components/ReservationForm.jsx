@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { emailjsConfig } from '@/config/emailjs'
 import { motion } from 'framer-motion'
-import { createTemporaryBooking, checkDateAvailability, getBlockedDates } from '@/services/bookingService'
+import { createTemporaryBooking, createGroupBooking, checkDateAvailability, getBlockedDates } from '@/services/bookingService'
 import { apartments } from '@/data/apartments'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,6 +23,7 @@ export default function ReservationForm({ apartment, price: priceProp }) {
   const { user } = useAuth() // Get current user if logged in
   const navigate = useNavigate()
   const [subtotal, setSubtotal] = useState(0)
+  const [unitCount, setUnitCount] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [dateError, setDateError] = useState(null)
   const [blockedDates, setBlockedDates] = useState([])
@@ -132,6 +133,7 @@ export default function ReservationForm({ apartment, price: priceProp }) {
       }
 
       // Prepare booking data for Firestore (only if dates are available)
+      // grand_total always stores the PER-UNIT amount; group total = grand_total × unitCount
       const bookingData = {
         apartment_id: apartment.id,
         apartment_name: apartment.name,
@@ -156,18 +158,32 @@ export default function ReservationForm({ apartment, price: priceProp }) {
         service_charge: serviceCharge,
         grand_total: grandTotal,
         total_nights: totalNights,
+        unit_count: unitCount,
+        group_booking_id: null,
+        unit_index: null,
       }
 
-      // Save to Firestore as pending_payment booking
-      const result = await createTemporaryBooking(bookingData)
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create booking')
+      // Save to Firestore — single booking or group booking
+      let savedBookingId = null
+      if (unitCount > 1) {
+        const result = await createGroupBooking(bookingData, unitCount)
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create group booking')
+        }
+        savedBookingId = result.bookingIds[0]
+        console.log('Group booking saved. Group ID:', result.groupId, '| Units:', result.bookingIds.length)
+      } else {
+        const result = await createTemporaryBooking(bookingData)
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create booking')
+        }
+        savedBookingId = result.bookingId
+        console.log('Booking saved to Firestore with ID:', savedBookingId)
       }
-      
-      console.log('Booking saved to Firestore with ID:', result.bookingId)
 
-      // Prepare EmailJS template parameters
+      const groupTotal = grandTotal * unitCount
+
+      // Prepare EmailJS template parameters — ONE email always, regardless of unit count
       const templateParams = {
         user_title: data.user_title,
         first_name: data.first_name,
@@ -177,15 +193,16 @@ export default function ReservationForm({ apartment, price: priceProp }) {
         checkin_date: data.checkin_date instanceof Date ? data.checkin_date.toISOString().split('T')[0] : data.checkin_date,
         checkout_date: data.checkout_date instanceof Date ? data.checkout_date.toISOString().split('T')[0] : data.checkout_date,
         guest_number: data.guest_number,
-        apartment_name: apartment.name,
+        apartment_name: unitCount > 1 ? `${apartment.name} (${unitCount} Apartments)` : apartment.name,
         room_rate: `₦${formatNumberWithCommas(price)}`,
         price_per_night: `₦${formatNumberWithCommas(price)}/night`,
         subtotal: `₦${formatNumberWithCommas(subtotal)}`,
         vat_amount: `₦${formatNumberWithCommas(vatAmount)}`,
         service_charge: `₦${formatNumberWithCommas(serviceCharge)}`,
-        grand_total: `₦${formatNumberWithCommas(grandTotal)}`,
-        balance: `₦${formatNumberWithCommas(grandTotal)}`, // Initial balance equals grand total (no payment made yet)
+        grand_total: `₦${formatNumberWithCommas(groupTotal)}`,
+        balance: `₦${formatNumberWithCommas(groupTotal)}`,
         total_nights: totalNights,
+        unit_count: unitCount,
       }
 
       // Send reservation confirmation email via EmailJS
@@ -409,17 +426,48 @@ export default function ReservationForm({ apartment, price: priceProp }) {
               </div>
             )}
 
+            {apartment?.maxUnits > 1 && (
+              <div>
+                <Label>Number of Apartments</Label>
+                <div className="flex items-center gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setUnitCount(c => Math.max(1, c - 1))}
+                    className="w-6 h-6 rounded-full border border-orange-300 text-orange-700 font-bold text-sm hover:bg-orange-50 flex items-center justify-center"
+                  >
+                    −
+                  </button>
+                  <span className="text-base font-semibold min-w-[110px] text-center">
+                    {unitCount} {unitCount === 1 ? 'Apartment' : 'Apartments'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setUnitCount(c => Math.min(apartment.maxUnits, c + 1))}
+                    className="w-6 h-6 rounded-full border border-orange-300 text-orange-700 font-bold text-sm hover:bg-orange-50 flex items-center justify-center"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select the amount of rooms you need for your stay. One check-in/out date applies to all apartments. The admin can extend individual units after check-in.
+                </p>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="guest_number">Number of Guests</Label>
               <Select
                 id="guest_number"
-                {...register('guest_number', { 
+                {...register('guest_number', {
                   required: 'Number of guests is required',
                   min: { value: 1, message: 'At least 1 guest is required' }
                 })}
               >
                 <option value="">Select number of guests</option>
-                {apartment?.details?.maxGuests && Array.from({ length: apartment.details.maxGuests }, (_, i) => i + 1).map((num) => (
+                {apartment?.details?.maxGuests && Array.from(
+                  { length: apartment.details.maxGuests * unitCount },
+                  (_, i) => i + 1
+                ).map((num) => (
                   <option key={num} value={num}>
                     {num} {num === 1 ? 'Guest' : 'Guests'}
                   </option>
@@ -432,10 +480,27 @@ export default function ReservationForm({ apartment, price: priceProp }) {
 
             {subtotal > 0 && (
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total Amount:</span>
-                  <span>₦{formatNumberWithCommas(grandTotal)}</span>
-                </div>
+                {unitCount > 1 ? (
+                  <>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Per Apartment ({Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24))} nights):</span>
+                      <span>₦{formatNumberWithCommas(grandTotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>× {unitCount} Apartments:</span>
+                      <span>₦{formatNumberWithCommas(grandTotal * unitCount)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                      <span>Total Amount:</span>
+                      <span>₦{formatNumberWithCommas(grandTotal * unitCount)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total Amount:</span>
+                    <span>₦{formatNumberWithCommas(grandTotal)}</span>
+                  </div>
+                )}
                 <p className="text-xs text-gray-600 mt-2">
                   * Price includes VAT (7.5%) and Service Charge (10%)
                 </p>

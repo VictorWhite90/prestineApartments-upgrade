@@ -9,7 +9,8 @@ import {
   query,
   where,
   orderBy,
-  Timestamp
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore'
 import { db } from '@/config/firebase'
 
@@ -43,6 +44,51 @@ export const createTemporaryBooking = async (bookingData) => {
     return {
       success: false,
       error: error.message || 'Failed to create booking'
+    }
+  }
+}
+
+/**
+ * Create multiple linked bookings for a group (multi-unit) reservation.
+ * Uses a Firestore batch write so all units are created atomically.
+ * Each document stores the per-unit amount in grand_total.
+ * @param {Object} bookingData - Base booking data (same guest info for all units)
+ * @param {number} unitCount - Number of units to book
+ * @returns {Promise<{success: boolean, groupId?: string, bookingIds?: string[], error?: string}>}
+ */
+export const createGroupBooking = async (bookingData, unitCount) => {
+  try {
+    const groupId =
+      'GRP-' +
+      Date.now() +
+      '-' +
+      Math.random().toString(36).substr(2, 6).toUpperCase()
+
+    const batch = writeBatch(db)
+    const bookingIds = []
+
+    for (let i = 1; i <= unitCount; i++) {
+      const newDocRef = doc(collection(db, BOOKINGS_COLLECTION))
+      bookingIds.push(newDocRef.id)
+      batch.set(newDocRef, {
+        ...bookingData,
+        group_booking_id: groupId,
+        unit_count: unitCount,
+        unit_index: i,
+        status: 'pending_payment',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        paymentDate: null,
+      })
+    }
+
+    await batch.commit()
+    return { success: true, groupId, bookingIds }
+  } catch (error) {
+    console.error('Error creating group booking:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to create group booking',
     }
   }
 }

@@ -1,16 +1,17 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { apartments } from '@/data/apartments'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { CheckCircle, ClipboardList, Home, Users, Phone, RefreshCw, Search, Filter, XCircle } from 'lucide-react'
+import { CheckCircle, ClipboardList, Home, Users, Phone, RefreshCw, Search, Filter, XCircle, Download } from 'lucide-react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { getAllBookings, updateBookingStatus, extendBookingStay, checkDateAvailability, deleteBooking } from '@/services/bookingService'
 import { Timestamp } from 'firebase/firestore'
 import emailjs from '@emailjs/browser'
 import { emailjsConfig } from '@/config/emailjs'
+import { generateReceipt } from '@/utils/generateReceipt'
 
 const statusBadgeStyle = {
   pending_payment: 'bg-orange-100 text-orange-700',
@@ -52,6 +53,14 @@ export default function Admin() {
   const [additionalAmountPaid, setAdditionalAmountPaid] = useState('')
   const [additionalPaymentError, setAdditionalPaymentError] = useState('')
   const [confirmingAdditionalPayment, setConfirmingAdditionalPayment] = useState(false)
+  // Group booking payment state
+  const [groupPaymentModalOpen, setGroupPaymentModalOpen] = useState(false)
+  const [groupPaymentUnits, setGroupPaymentUnits] = useState([])
+  const [groupAmountPaid, setGroupAmountPaid] = useState('')
+  const [groupPaymentError, setGroupPaymentError] = useState('')
+  const [confirmingGroupPayment, setConfirmingGroupPayment] = useState(false)
+  const [isGroupNegotiated, setIsGroupNegotiated] = useState(false)
+  const [groupNegotiatedPrice, setGroupNegotiatedPrice] = useState('')
   const processedAutoCancelRef = useRef(new Set())
   const applyLocalBookingUpdate = (bookingId, updates) => {
     setBookings((prev) =>
@@ -394,6 +403,132 @@ export default function Admin() {
     setAdditionalPaymentError('')
     setConfirmingAdditionalPayment(false)
     document.body.style.overflow = ''
+  }
+
+  const openGroupPaymentModal = (units) => {
+    setGroupPaymentUnits(units)
+    setGroupAmountPaid('')
+    setGroupPaymentError('')
+    setIsGroupNegotiated(false)
+    setGroupNegotiatedPrice('')
+    setGroupPaymentModalOpen(true)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeGroupPaymentModal = () => {
+    setGroupPaymentModalOpen(false)
+    setGroupPaymentUnits([])
+    setGroupAmountPaid('')
+    setGroupPaymentError('')
+    setIsGroupNegotiated(false)
+    setGroupNegotiatedPrice('')
+    setConfirmingGroupPayment(false)
+    document.body.style.overflow = ''
+  }
+
+  const handleConfirmGroupPayment = async () => {
+    if (!groupPaymentUnits.length) return
+
+    const totalPaid = parseFloat(groupAmountPaid)
+    if (!groupAmountPaid || isNaN(totalPaid) || totalPaid <= 0) {
+      setGroupPaymentError('Please enter a valid payment amount.')
+      return
+    }
+
+    const unitCount = groupPaymentUnits.length
+    const groupGrandTotal = groupPaymentUnits.reduce((sum, b) => sum + (b.grand_total || 0), 0)
+    const parsedNegotiatedPrice = isGroupNegotiated ? parseFloat(groupNegotiatedPrice) : null
+    const effectiveGroupTotal = (isGroupNegotiated && parsedNegotiatedPrice && !isNaN(parsedNegotiatedPrice) && parsedNegotiatedPrice > 0)
+      ? parsedNegotiatedPrice
+      : groupGrandTotal
+
+    if (isGroupNegotiated && (!parsedNegotiatedPrice || isNaN(parsedNegotiatedPrice) || parsedNegotiatedPrice <= 0)) {
+      setGroupPaymentError('Please enter a valid negotiated price.')
+      return
+    }
+    if (isGroupNegotiated && parsedNegotiatedPrice > groupGrandTotal) {
+      setGroupPaymentError('Negotiated price cannot exceed the original group total.')
+      return
+    }
+    if (totalPaid > effectiveGroupTotal) {
+      setGroupPaymentError(`Amount paid cannot exceed the ${isGroupNegotiated ? 'negotiated' : 'group'} total.`)
+      return
+    }
+
+    setConfirmingGroupPayment(true)
+    setGroupPaymentError('')
+
+    try {
+      const perUnitEffectiveTotal = effectiveGroupTotal / unitCount
+      const perUnitPaid = totalPaid / unitCount
+      const perUnitBalance = perUnitEffectiveTotal - perUnitPaid
+
+      const paymentDate = new Date()
+      const formattedPaymentDate = paymentDate.toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+
+      // Update all units in the group
+      for (const unit of groupPaymentUnits) {
+        const additionalData = {
+          amount_paid: perUnitPaid,
+          balance: Math.max(0, perUnitBalance),
+          paymentDate,
+        }
+        if (isGroupNegotiated && parsedNegotiatedPrice) {
+          additionalData.negotiated_price = perUnitEffectiveTotal
+        }
+        await updateBookingStatus(unit.id, 'booking_successful', additionalData)
+      }
+
+      // Send ONE confirmation email for the whole group
+      const representative = groupPaymentUnits[0]
+      const checkinDate = representative.checkin_date?.toDate
+        ? representative.checkin_date.toDate().toISOString().split('T')[0]
+        : representative.checkin_date
+      const checkoutDate = representative.checkout_date?.toDate
+        ? representative.checkout_date.toDate().toISOString().split('T')[0]
+        : representative.checkout_date
+
+      const templateParams = {
+        user_title: representative.user_title || '',
+        first_name: representative.first_name || '',
+        last_name: representative.last_name || '',
+        user_email: representative.user_email || '',
+        user_phone: representative.user_phone || '',
+        checkin_date: checkinDate,
+        checkout_date: checkoutDate,
+        payment_date: formattedPaymentDate,
+        guest_number: representative.guest_number || '',
+        apartment_name: `${representative.apartment_name} (${unitCount} Apartments)`,
+        room_rate: `₦${formatNumberWithCommas(representative.room_rate || representative.price_per_night || 0)}`,
+        price_per_night: `₦${formatNumberWithCommas(representative.price_per_night || representative.room_rate || 0)}/night`,
+        subtotal: `₦${formatNumberWithCommas(representative.subtotal * unitCount || 0)}`,
+        vat_amount: `₦0.00`,
+        service_charge: `₦0.00`,
+        grand_total: `₦${formatNumberWithCommas(effectiveGroupTotal)}`,
+        amount_paid: `₦${formatNumberWithCommas(totalPaid)}`,
+        balance: `₦${formatNumberWithCommas(Math.max(0, effectiveGroupTotal - totalPaid))}`,
+        total_nights: representative.total_nights || 0,
+        booking_status: 'Group Booking Confirmed - Payment Received',
+        unit_count: unitCount,
+      }
+
+      try {
+        await emailjs.send(emailjsConfig.serviceId, emailjsConfig.templateIdCompany, templateParams)
+      } catch (emailError) {
+        console.error('Email sending failed (bookings still confirmed):', emailError)
+      }
+
+      await fetchBookings()
+      closeGroupPaymentModal()
+      alert(`All ${unitCount} apartments confirmed! Confirmation email sent to guest.`)
+    } catch (error) {
+      console.error('Error confirming group payment:', error)
+      setGroupPaymentError(`Failed to confirm payment: ${error.message || error}. Please try again.`)
+    } finally {
+      setConfirmingGroupPayment(false)
+    }
   }
 
   const handleAdditionalPayment = async () => {
@@ -974,7 +1109,29 @@ export default function Admin() {
                     <div className="text-center py-8 text-gray-500">
                       No bookings match your filters. Try adjusting the search.
                     </div>
-                  ) : (
+                  ) : (() => {
+                    // Sort group bookings together by group_booking_id + unit_index, singles stay at end
+                    const sortedBookings = [...filteredBookings].sort((a, b) => {
+                      const keyA = a.group_booking_id
+                        ? a.group_booking_id + String(a.unit_index || 0).padStart(3, '0')
+                        : 'ZZZ' + a.id
+                      const keyB = b.group_booking_id
+                        ? b.group_booking_id + String(b.unit_index || 0).padStart(3, '0')
+                        : 'ZZZ' + b.id
+                      return keyA.localeCompare(keyB)
+                    })
+
+                    // Find the first visible unit of each group (to inject group header row)
+                    const groupFirstUnitIds = new Set()
+                    const seenGroups = new Set()
+                    sortedBookings.forEach(b => {
+                      if (b.group_booking_id && !seenGroups.has(b.group_booking_id)) {
+                        seenGroups.add(b.group_booking_id)
+                        groupFirstUnitIds.add(b.id)
+                      }
+                    })
+
+                    return (
                     <table className="w-full text-left text-sm">
                       <thead>
                         <tr className="text-gray-500 uppercase tracking-wide text-xs border-b">
@@ -990,8 +1147,46 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredBookings.map((booking) => (
-                          <tr key={booking.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                        {sortedBookings.map((booking) => {
+                          const isGroupUnit = !!booking.group_booking_id
+                          const isFirstInGroup = groupFirstUnitIds.has(booking.id)
+                          const groupUnitsInView = isFirstInGroup
+                            ? sortedBookings.filter(b => b.group_booking_id === booking.group_booking_id)
+                            : []
+                          const pendingGroupUnits = groupUnitsInView.filter(b => b.status === 'pending_payment' || b.status === 'temporary')
+
+                          return (
+                          <Fragment key={booking.id}>
+                          {/* Group header row — injected before the first unit of each group */}
+                          {isFirstInGroup && (
+                            <tr key={`gh-${booking.group_booking_id}`} className="bg-orange-50 border-b border-orange-200">
+                              <td colSpan={9} className="px-2 py-2">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-200 text-orange-800 text-xs font-bold uppercase tracking-wide">
+                                      Group Booking
+                                    </span>
+                                    <span className="text-sm font-semibold text-orange-900">
+                                      {groupUnitsInView.length} Apartments · {booking.first_name} {booking.last_name}
+                                    </span>
+                                    <span className="text-xs text-orange-700">
+                                      Ref: {booking.group_booking_id}
+                                    </span>
+                                  </div>
+                                  {pendingGroupUnits.length > 0 && (
+                                    <Button
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                                      onClick={() => openGroupPaymentModal(pendingGroupUnits)}
+                                    >
+                                      Confirm All {pendingGroupUnits.length} Apartments
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          <tr key={booking.id} className={`border-b last:border-b-0 hover:bg-gray-50 ${isGroupUnit ? 'border-l-4 border-l-orange-300' : ''}`}>
                             <td className="py-4">
                               <div>
                                 <p className="font-semibold text-gray-900">
@@ -1004,6 +1199,11 @@ export default function Admin() {
                                   </a>
                                 </div>
                                 <p className="text-xs text-gray-500">{booking.user_email}</p>
+                                {isGroupUnit && (
+                                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full mt-1 inline-block">
+                                    Unit {booking.unit_index} of {booking.unit_count}
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="py-4">
@@ -1075,6 +1275,15 @@ export default function Admin() {
                                   >
                                     Extend Stay
                                   </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-orange-300 text-orange-700 hover:bg-orange-50 w-full"
+                                    onClick={() => generateReceipt(booking)}
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    Download Receipt
+                                  </Button>
                                   <span className="text-xs text-green-600 font-semibold block text-center">
                                     Confirmed
                                   </span>
@@ -1097,10 +1306,12 @@ export default function Admin() {
                               )}
                             </td>
                           </tr>
-                        ))}
+                          </Fragment>
+                        )})}
                       </tbody>
                     </table>
-                  )}
+                    )
+                  })()}
                 </div>
               </CardContent>
             </Card>
@@ -1450,6 +1661,164 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {/* Group Payment Confirmation Modal */}
+      {groupPaymentModalOpen && groupPaymentUnits.length > 0 && (() => {
+        const representative = groupPaymentUnits[0]
+        const unitCount = groupPaymentUnits.length
+        const groupGrandTotal = groupPaymentUnits.reduce((sum, b) => sum + (b.grand_total || 0), 0)
+        const parsedNeg = isGroupNegotiated && groupNegotiatedPrice && !isNaN(parseFloat(groupNegotiatedPrice)) && parseFloat(groupNegotiatedPrice) > 0
+          ? parseFloat(groupNegotiatedPrice) : null
+        const effectiveGroupTotal = parsedNeg || groupGrandTotal
+        const groupBalance = groupAmountPaid && !isNaN(parseFloat(groupAmountPaid)) && parseFloat(groupAmountPaid) > 0
+          ? Math.max(0, effectiveGroupTotal - parseFloat(groupAmountPaid)) : null
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 overflow-y-auto py-6">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 my-auto max-h-[90vh] overflow-y-auto">
+              <div>
+                <h3 className="text-2xl font-serif font-semibold text-gray-900">Confirm Group Payment</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Confirming payment for {unitCount} apartments booked by {representative.first_name} {representative.last_name}
+                </p>
+              </div>
+
+              <div className="bg-orange-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Apartment:</span>
+                  <span className="font-semibold text-gray-900">{representative.apartment_name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Check-in:</span>
+                  <span className="font-semibold text-gray-900">{formatDate(representative.checkin_date)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Check-out:</span>
+                  <span className="font-semibold text-gray-900">{formatDate(representative.checkout_date)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Units to confirm:</span>
+                  <span className="font-semibold text-orange-800">{unitCount} Apartments</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t border-orange-200">
+                  <span className="text-gray-600">Total (all units):</span>
+                  <span className={`font-bold text-lg ${parsedNeg ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                    ₦{formatNumberWithCommas(groupGrandTotal)}
+                  </span>
+                </div>
+                {parsedNeg && (
+                  <div className="flex justify-between text-sm pt-1">
+                    <span className="text-blue-600 font-semibold">Agreed Price (all units):</span>
+                    <span className="font-bold text-blue-700 text-lg">₦{formatNumberWithCommas(parsedNeg)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isGroupNegotiated}
+                    onChange={(e) => {
+                      setIsGroupNegotiated(e.target.checked)
+                      if (!e.target.checked) setGroupNegotiatedPrice('')
+                    }}
+                    className="w-4 h-4 accent-blue-600 rounded"
+                  />
+                  <span className="text-sm font-semibold text-blue-800">
+                    Price was negotiated / discounted
+                  </span>
+                </label>
+                {isGroupNegotiated && (
+                  <div>
+                    <label className="text-xs text-blue-700 font-semibold block mb-1">
+                      Agreed Total Price (all {unitCount} apartments)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={groupGrandTotal}
+                        value={groupNegotiatedPrice}
+                        onChange={(e) => setGroupNegotiatedPrice(e.target.value)}
+                        placeholder="Enter agreed total price"
+                        className="w-full pl-8 pr-3 py-2 border-2 border-blue-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
+                      />
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      This will be split equally across all {unitCount} apartments.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  Total Amount Paid by Client (all apartments)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₦</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={effectiveGroupTotal}
+                    value={groupAmountPaid}
+                    onChange={(e) => setGroupAmountPaid(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-3 py-3 border-2 border-orange-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-semibold"
+                  />
+                </div>
+              </div>
+
+              {groupBalance !== null && (
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Group Balance Remaining:</span>
+                    <span className={`font-bold text-xl ${groupBalance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      ₦{formatNumberWithCommas(groupBalance)}
+                    </span>
+                  </div>
+                  {groupBalance === 0 && (
+                    <p className="text-xs text-green-600 mt-2 font-semibold">Full group payment received!</p>
+                  )}
+                  {groupBalance > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Partial payment. Balance will be tracked per unit in the system.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {groupPaymentError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {groupPaymentError}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 md:flex-row md:justify-end">
+                <Button
+                  variant="outline"
+                  className="border-gray-300 text-gray-700"
+                  onClick={closeGroupPaymentModal}
+                  disabled={confirmingGroupPayment}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleConfirmGroupPayment}
+                  disabled={confirmingGroupPayment || !groupAmountPaid}
+                >
+                  {confirmingGroupPayment ? 'Confirming...' : `Confirm All ${groupPaymentUnits.length} Apartments & Send Email`}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

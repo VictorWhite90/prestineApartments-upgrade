@@ -68,6 +68,7 @@ export const apartments = [
       bathrooms: '1',
     },
     disableDateBlocking: true,
+    maxUnits: 20,
   },
   {
     id: 'classic-studio',
@@ -103,6 +104,7 @@ export const apartments = [
       bathrooms: '1',
     },
     disableDateBlocking: true,
+    maxUnits: 4,
   },
   {
     id: 'delux-royal',
